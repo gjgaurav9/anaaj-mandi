@@ -8,6 +8,11 @@ import rateLimitPlugin from './plugins/rateLimit.js';
 import errorHandlerPlugin from './plugins/errorHandler.js';
 import authRoutes from './routes/auth.js';
 import meRoutes from './routes/me.js';
+import lotsRoutes from './routes/lots.js';
+import inquiriesRoutes from './routes/inquiries.js';
+import pricesRoutes from './routes/prices.js';
+import transactionsRoutes from './routes/transactions.js';
+import adminRoutes from './routes/admin.js';
 
 async function build() {
   const app = Fastify({
@@ -41,6 +46,11 @@ async function build() {
 
   await app.register(authRoutes);
   await app.register(meRoutes);
+  await app.register(lotsRoutes);
+  await app.register(inquiriesRoutes);
+  await app.register(pricesRoutes);
+  await app.register(transactionsRoutes);
+  await app.register(adminRoutes);
 
   return app;
 }

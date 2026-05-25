@@ -14,8 +14,10 @@ import { TransactionModel } from './models/Transaction.js';
  */
 
 const MP_STATE = 'Madhya Pradesh';
+// UTC midnight so PriceTick date matches the /prices/today server filter
+// (which is also UTC-midnight based) regardless of the host timezone.
 const today = new Date();
-today.setHours(0, 0, 0, 0);
+today.setUTCHours(0, 0, 0, 0);
 
 // ---- demo geo points (lng, lat) ----
 const GEO = {

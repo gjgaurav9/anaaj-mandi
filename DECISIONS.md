@@ -166,6 +166,50 @@ The global rate limiter keys on IP. OTP send is keyed on `phone` because a singl
 
 Every route returns through these helpers so the shape stays consistent. The error handler plugin also routes uncaught `ValidationError`s through `fail()`. The Zod `parseOrThrow` wrapper turns Zod issues into `400` validation errors with field-level `details`.
 
+---
+
+## Step 5 — lots / inquiries / prices / transactions / admin (`apps/api`)
+
+### D39. Lot list defaults to `status: 'active'`, accepts `status=` override
+
+Browse should show buyable inventory by default. Pass `?status=draft` to inspect your own drafts via `/lots/mine` (which filters by ownership anyway).
+
+### D40. Geospatial filter uses `$geoWithin + $centerSphere`, not `$near`
+
+`$near` requires a `2dsphere` index AND can't be combined with `$or`/skip in a few Mongo versions, which breaks pagination + filtering. `$geoWithin` works inside any compound `find`, so we use it with the `radius_km / earth_radius_km` formula. Default radius when `near_lat`/`near_lng` are passed without `radius_km`: 50 km.
+
+### D41. `view_count` and `inquiry_count` increments are fire-and-forget
+
+We don't `await` them. The product is OK with a small under-count in the worst case; what we save is a round-trip on the hot path. Errors are logged via `app.log.warn`.
+
+### D42. Photos on `POST /lots/:id/photos` are appended, capped at 5
+
+Server takes the existing `lot.photos`, concatenates new URLs, then slices to 5. Lets the multi-step form upload in batches.
+
+### D43. 24h inquiry dedupe via index scan, not unique constraint
+
+`InquiryModel.findOne({ buyer_id, lot_id, created_at: $gte: now-24h })` against the compound index `(buyer_id, lot_id, created_at desc)`. A unique constraint would prevent re-inquiry forever; the time window is the actual business rule.
+
+### D44. Recording a transaction moves the lot's `status`
+
+`status='agreed'` → lot becomes `reserved`. `status='shipped'|'delivered'` → lot becomes `sold`. Keeps the marketplace state machine consistent without a separate "mark sold" route.
+
+### D45. Cloudinary signing endpoint returns full params, not just signature
+
+`POST /lots/photos/sign` returns `{ timestamp, folder, signature, api_key, cloud_name }`. Browser plugs the whole object into the Cloudinary upload form without ever seeing the API secret.
+
+### D46. Admin routes share a single role gate via `addHook('preHandler', requireRole('admin'))`
+
+One line guards the whole namespace. Per-route preHandlers would duplicate the check on every admin endpoint.
+
+### D47. `/admin/prices` upserts on the `(mandi, variety, date)` unique key
+
+Re-posting the same combination overwrites yesterday's value rather than throwing a duplicate-key error. After write, the redis cache key for that date is invalidated so the next `/prices/today` is a fresh DB read.
+
+### D38. UTC-midnight for `PriceTick.date` + `/prices/today` filter
+
+Seed inserts ticks at `today.setUTCHours(0,0,0,0)`; the route filters `date >= UTC midnight today`. The host is in IST (UTC+5:30), so a naive local-midnight seed produced rows dated 5h30 before UTC midnight and `/prices/today` returned `[]`. Switching to UTC for both makes the comparison correct regardless of host timezone, and matches how the Redis cache key (`prices:today:YYYY-MM-DD` in UTC) is keyed.
+
 ### D37. `request.user.sub` is the stringified Mongo `_id`
 
 Cookie payload is `{ sub, role, phone }`. We never trust the `role` value blindly when it matters — admin routes re-check against the DB. But for cheap reads like `/me`, the JWT claim is enough.
