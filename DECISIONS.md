@@ -86,6 +86,46 @@ Query strings are strings. `z.coerce.number()` lets the route handler validate `
 
 V1 is wheat-only and we want a type error if someone forgets and ships a multi-grain UI without first widening the schema. The literal is trivially replaceable with `z.enum(['wheat', 'rice', ...])` later.
 
+### D20a. Redis remapped to host port 6380 (container still 6379)
+
+Another dev project on this machine already holds host port 6379. To stay decoupled, our docker-compose binds host `6380` → container `6379`, and `.env.example` points `REDIS_URL` at `redis://localhost:6380`. Inside docker compose, any future containerised API talks to `redis:6379` directly.
+
 ### D20. Schemas import each other via `.js` extensions
 
 `packages/types` is ESM (`"type": "module"`). TypeScript with `moduleResolution: "Bundler"` plus Node ESM both happily resolve `./common.js` from a `.ts` source. Keeps consumer apps (`apps/api` ESM) working when @anaaj/types ships as compiled JS later.
+
+---
+
+## Step 3 — Mongoose models + seed (`@anaaj/db`)
+
+### D21. Models live only in `packages/db/src/models/`
+
+API routes never instantiate `mongoose.Schema` themselves. The rule keeps schema/model drift impossible and gives the API code one place to mock for tests.
+
+### D22. Custom timestamp field names (`created_at` / `updated_at`)
+
+`{ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }`. Aligns with the Zod schemas in `@anaaj/types` and avoids camel/snake conversion at every API boundary.
+
+### D23. `_id` cast through `unknown` in the seed
+
+Mongoose 8's `InferSchemaType` doesn't model the auto-injected `_id`, so seed code that extracts IDs out of inserted documents needs an explicit `as unknown as Types.ObjectId`. Documented here so the next person doesn't try to "clean it up" without understanding the inference gap. A proper fix is a typed `Hydrated*` alias per model — deferred.
+
+### D24. `InquiryModel` has `created_at` only (no `updated_at`)
+
+Inquiry rows are essentially append-only events. The 24h dedupe checks `created_at`; status transitions overwrite the same row but we don't bother maintaining `updated_at` for it.
+
+### D25. The compound `(buyer_id, lot_id)` index on inquiries is **not unique**
+
+A buyer can re-inquire on the same lot after the 24h window. Uniqueness would prevent that. The window is enforced in the service layer in step 5.
+
+### D26. Seed refuses to run with `NODE_ENV=production` unless `FORCE_SEED=true`
+
+Cheap insurance against pointing the seed at a real cluster. The seed drops collections before reinserting, so a misfire is catastrophic.
+
+### D27. Demo phone numbers all start with `+91 98000000xx`
+
+Easy to remember, easy to demo, all valid Indian mobile prefixes (9 → 8 → digits). OTP `123456` works for any of them in dev.
+
+### D28. Photos in seed use `res.cloudinary.com/demo/...` placeholder URLs
+
+The HTTPS validator accepts them, the `LotCard` will happily render them, and we don't need a real Cloudinary account to demo browse/detail. Real signed direct uploads land in step 5.

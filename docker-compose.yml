@@ -17,8 +17,9 @@ services:
     image: redis:7-alpine
     container_name: anaaj-redis
     restart: unless-stopped
+    # Host 6380 → container 6379 so we don't clash with any other local redis on 6379.
     ports:
-      - '6379:6379'
+      - '6380:6379'
     command: ['redis-server', '--appendonly', 'yes']
     volumes:
       - redis_data:/data
