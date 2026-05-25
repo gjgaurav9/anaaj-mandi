@@ -126,6 +126,46 @@ Cheap insurance against pointing the seed at a real cluster. The seed drops coll
 
 Easy to remember, easy to demo, all valid Indian mobile prefixes (9 → 8 → digits). OTP `123456` works for any of them in dev.
 
+### D29. Mongoose models export explicit `I*` interfaces instead of `InferSchemaType`
+
+Mongoose 8's `InferSchemaType` collapses to `{}` at some downstream call sites (e.g. `Awaited<ReturnType<typeof UserModel.findById>>` resolves to `{} | null`). We tripped over it in `apps/api/src/routes/me.ts`. Fix: each model now declares an explicit `IUser` / `ILot` / etc. interface and the schema is typed with `new Schema<IUser>(...)`. `UserDoc` (and friends) is `HydratedDocument<IUser> & { _id: Types.ObjectId }`. More keystrokes per model, but downstream code is fully typed.
+
 ### D28. Photos in seed use `res.cloudinary.com/demo/...` placeholder URLs
 
 The HTTPS validator accepts them, the `LotCard` will happily render them, and we don't need a real Cloudinary account to demo browse/detail. Real signed direct uploads land in step 5.
+
+---
+
+## Step 4 — API auth flow (`apps/api`)
+
+### D30. Env loaded via `node --env-file` / `tsx --env-file`, not `dotenv`
+
+Node 20+ ships `--env-file` natively; tsx 4 forwards it. Scripts read `--env-file=../../.env`, so the root `.env` is the single source of truth and we avoid a dotenv runtime dependency. The `.env` file must exist (copy from `.env.example`); the README will say so.
+
+### D31. JWT in httpOnly cookie + `@fastify/jwt` `cookie` option
+
+`@fastify/jwt` is configured with `cookie: { cookieName: env.JWT_COOKIE_NAME, signed: false }`, so `request.jwtVerify()` reads either the `Authorization` header or the cookie. Cookies are `sameSite: 'lax'`, `secure` only in production, `httpOnly: true`, 30 days. Reading from the cookie is what lets Next.js server components authenticate without forwarding headers.
+
+### D32. CORS allowlists `WEB_ORIGIN` with credentials
+
+In dev, web (`:3000`) and api (`:4000`) are different origins, so we still need explicit CORS even though we're "same-site" in prod. `credentials: true` lets the cookie flow.
+
+### D33. Per-phone OTP rate limit lives in Redis, not in `@fastify/rate-limit`
+
+The global rate limiter keys on IP. OTP send is keyed on `phone` because a single IP could legitimately host many users (shared NAT in rural India). Implemented as a Redis `INCR` + `EXPIRE` against `otp:rate:{phone}`, max 5 per hour. The route also has a softer IP cap (10/min) from the standard limiter to absorb runaway clients.
+
+### D34. OTP dev bypass: literal "123456" always accepted when `OTP_DEV_BYPASS=true`
+
+`verifyOtp` short-circuits to `true` whenever the env flag is on and the OTP is `"123456"`. The real OTP is also stored and accepted, so end-to-end tests can opt out of the bypass by typing the logged code. The bypass is on by default — turn off only when wiring real Twilio Verify.
+
+### D35. First OTP verify requires a `role`
+
+`POST /auth/otp/verify { phone, otp, role? }`: if the phone has no user yet, `role` must be provided to materialize the user shell. The frontend picks the role on signup before the OTP screen.
+
+### D36. Uniform `{ ok, data | error }` envelope via `ok()` / `fail()` helpers
+
+Every route returns through these helpers so the shape stays consistent. The error handler plugin also routes uncaught `ValidationError`s through `fail()`. The Zod `parseOrThrow` wrapper turns Zod issues into `400` validation errors with field-level `details`.
+
+### D37. `request.user.sub` is the stringified Mongo `_id`
+
+Cookie payload is `{ sub, role, phone }`. We never trust the `role` value blindly when it matters — admin routes re-check against the DB. But for cheap reads like `/me`, the JWT claim is enough.

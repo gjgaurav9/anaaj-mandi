@@ -1,6 +1,45 @@
-import { Schema, model, type InferSchemaType, type Model } from 'mongoose';
+import { Schema, model, type HydratedDocument, type Model, type Types } from 'mongoose';
 
-const kycSchema = new Schema(
+export type Role = 'seller' | 'broker' | 'buyer' | 'admin';
+export type KycStatus = 'pending' | 'verified' | 'rejected';
+
+export interface IKyc {
+  status: KycStatus;
+  gst?: string;
+  pan_last4?: string;
+  aadhaar_last4?: string;
+  verified_at?: Date;
+}
+
+export interface IGeoPoint {
+  type: 'Point';
+  coordinates: number[];
+}
+
+export interface IUserLocation {
+  city: string;
+  district: string;
+  state: string;
+  pincode: string;
+  geo: IGeoPoint;
+}
+
+export interface IUser {
+  phone: string;
+  name?: string;
+  role: Role;
+  kyc: IKyc;
+  location?: IUserLocation;
+  business_name?: string;
+  broker_mandi?: string;
+  broker_years?: number;
+  buyer_company?: string;
+  buyer_gst?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const kycSchema = new Schema<IKyc>(
   {
     status: {
       type: String,
@@ -16,7 +55,7 @@ const kycSchema = new Schema(
   { _id: false },
 );
 
-const userLocationSchema = new Schema(
+const userLocationSchema = new Schema<IUserLocation>(
   {
     city: { type: String, required: true },
     district: { type: String, required: true },
@@ -41,7 +80,7 @@ const userLocationSchema = new Schema(
   { _id: false },
 );
 
-const userSchema = new Schema(
+const userSchema = new Schema<IUser>(
   {
     phone: {
       type: String,
@@ -58,7 +97,6 @@ const userSchema = new Schema(
     kyc: { type: kycSchema, default: () => ({ status: 'pending' }) },
     location: { type: userLocationSchema },
     business_name: { type: String, maxlength: 120 },
-    // role-specific
     broker_mandi: { type: String, maxlength: 80 },
     broker_years: { type: Number, min: 0, max: 80 },
     buyer_company: { type: String, maxlength: 120 },
@@ -70,6 +108,6 @@ const userSchema = new Schema(
   },
 );
 
-export type UserDoc = InferSchemaType<typeof userSchema>;
+export type UserDoc = HydratedDocument<IUser> & { _id: Types.ObjectId };
 
-export const UserModel: Model<UserDoc> = model<UserDoc>('User', userSchema);
+export const UserModel: Model<IUser> = model<IUser>('User', userSchema);

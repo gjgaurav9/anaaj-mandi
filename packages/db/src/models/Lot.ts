@@ -1,6 +1,43 @@
-import { Schema, model, Types, type InferSchemaType, type Model } from 'mongoose';
+import { Schema, model, type HydratedDocument, type Model, type Types } from 'mongoose';
+import type { IGeoPoint } from './User.js';
 
-const qualitySchema = new Schema(
+export type Variety = 'lokwan' | 'sharbati' | 'sehore' | 'mp_sihore' | 'other';
+export type LotStatus = 'draft' | 'active' | 'reserved' | 'sold' | 'expired';
+
+export interface ILotQuality {
+  moisture_pct: number;
+  foreign_matter_pct: number;
+  broken_pct: number;
+  protein_pct?: number;
+}
+
+export interface ILotPickupLocation {
+  city: string;
+  district: string;
+  pincode: string;
+  geo: IGeoPoint;
+}
+
+export interface ILot {
+  seller_id: Types.ObjectId;
+  broker_id?: Types.ObjectId;
+  grain: 'wheat';
+  variety: Variety;
+  quantity_quintals: number;
+  /** integer paise */
+  price_per_quintal: number;
+  quality: ILotQuality;
+  photos: string[];
+  pickup_location: ILotPickupLocation;
+  available_from: Date;
+  status: LotStatus;
+  view_count: number;
+  inquiry_count: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const qualitySchema = new Schema<ILotQuality>(
   {
     moisture_pct: { type: Number, required: true, min: 0, max: 30 },
     foreign_matter_pct: { type: Number, required: true, min: 0, max: 20 },
@@ -10,7 +47,7 @@ const qualitySchema = new Schema(
   { _id: false },
 );
 
-const pickupLocationSchema = new Schema(
+const pickupLocationSchema = new Schema<ILotPickupLocation>(
   {
     city: { type: String, required: true },
     district: { type: String, required: true },
@@ -34,10 +71,10 @@ const pickupLocationSchema = new Schema(
   { _id: false },
 );
 
-const lotSchema = new Schema(
+const lotSchema = new Schema<ILot>(
   {
-    seller_id: { type: Types.ObjectId, ref: 'User', required: true, index: true },
-    broker_id: { type: Types.ObjectId, ref: 'User', index: true },
+    seller_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    broker_id: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     grain: { type: String, enum: ['wheat'], required: true, default: 'wheat' },
     variety: {
       type: String,
@@ -45,7 +82,6 @@ const lotSchema = new Schema(
       required: true,
     },
     quantity_quintals: { type: Number, required: true, min: 10 },
-    /** Stored as integer paise. */
     price_per_quintal: { type: Number, required: true, min: 0 },
     quality: { type: qualitySchema, required: true },
     photos: {
@@ -74,11 +110,9 @@ const lotSchema = new Schema(
   },
 );
 
-// Geospatial radius search on pickup_location.geo
 lotSchema.index({ 'pickup_location.geo': '2dsphere' });
-// Text search across variety + city
 lotSchema.index({ variety: 'text', 'pickup_location.city': 'text' });
 
-export type LotDoc = InferSchemaType<typeof lotSchema>;
+export type LotDoc = HydratedDocument<ILot> & { _id: Types.ObjectId };
 
-export const LotModel: Model<LotDoc> = model<LotDoc>('Lot', lotSchema);
+export const LotModel: Model<ILot> = model<ILot>('Lot', lotSchema);

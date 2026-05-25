@@ -1,10 +1,23 @@
-import { Schema, model, Types, type InferSchemaType, type Model } from 'mongoose';
+import { Schema, model, type HydratedDocument, type Model, type Types } from 'mongoose';
 
-const inquirySchema = new Schema(
+export type InquiryStatus = 'sent' | 'viewed' | 'replied' | 'closed';
+export type InquiryChannel = 'whatsapp' | 'call' | 'platform';
+
+export interface IInquiry {
+  lot_id: Types.ObjectId;
+  buyer_id: Types.ObjectId;
+  seller_id: Types.ObjectId;
+  message: string;
+  status: InquiryStatus;
+  channel: InquiryChannel;
+  created_at: Date;
+}
+
+const inquirySchema = new Schema<IInquiry>(
   {
-    lot_id: { type: Types.ObjectId, ref: 'Lot', required: true, index: true },
-    buyer_id: { type: Types.ObjectId, ref: 'User', required: true, index: true },
-    seller_id: { type: Types.ObjectId, ref: 'User', required: true, index: true },
+    lot_id: { type: Schema.Types.ObjectId, ref: 'Lot', required: true, index: true },
+    buyer_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    seller_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     message: { type: String, maxlength: 500, default: '' },
     status: {
       type: String,
@@ -24,10 +37,8 @@ const inquirySchema = new Schema(
   },
 );
 
-// (buyer_id, lot_id) is what the 24h dedupe service queries against.
-// Not unique — a buyer can inquire again on the same lot after 24h.
 inquirySchema.index({ buyer_id: 1, lot_id: 1, created_at: -1 });
 
-export type InquiryDoc = InferSchemaType<typeof inquirySchema>;
+export type InquiryDoc = HydratedDocument<IInquiry> & { _id: Types.ObjectId };
 
-export const InquiryModel: Model<InquiryDoc> = model<InquiryDoc>('Inquiry', inquirySchema);
+export const InquiryModel: Model<IInquiry> = model<IInquiry>('Inquiry', inquirySchema);
