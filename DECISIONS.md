@@ -53,3 +53,39 @@ Microcopy uses words like "Namaste", "Mandi rate", "Quintal" because that's the 
 ### D12. Repo-local git author (`gjgaurav9 / gjgaurav9@gmail.com`)
 
 Set via `git config user.name/email` inside the repo only — global git config untouched.
+
+---
+
+## Step 2 — shared Zod schemas (`@anaaj/types`)
+
+### D13. ObjectId as 24-char hex string everywhere
+
+Zod schemas use `ObjectIdSchema = z.string().regex(/^[a-f0-9]{24}$/i)` rather than a Mongo `ObjectId` type. The same schema is then valid in the browser (where there is no `bson`), in API request bodies, and in Mongoose pre-save coercion. Server-side helpers convert to `Types.ObjectId` only at the model boundary.
+
+### D14. Phone regex pinned to Indian mobile numbers
+
+`/^\+91[6-9]\d{9}$/` — first digit after `+91` must be 6, 7, 8, or 9 (TRAI mobile numbering). Landlines and overseas numbers are rejected outright since v1 is Indore-only.
+
+### D15. Money on the wire is paise (integer), never rupees (float)
+
+`PaiseSchema = z.number().int().nonnegative()`. Rupees are a display-layer concern; formatters in `apps/web/lib` will divide by 100 and apply Indian comma grouping. No floating-point money anywhere.
+
+### D16. Cross-field refine on `PriceTick`
+
+`price_min ≤ price_modal ≤ price_max` enforced at the Zod level so a bad admin entry never reaches Mongo.
+
+### D17. `CreateLotInput.photos` defaults to `[]`, `LotSchema.photos` requires min 1
+
+A lot can be saved as a draft without photos, but the public `Lot` shape always has at least one URL. The transition from draft → active is the moment that constraint flips on — enforced in the API service layer in step 5.
+
+### D18. `ListLotsQuery` uses `z.coerce` for every numeric param
+
+Query strings are strings. `z.coerce.number()` lets the route handler validate `?page=2&radius_km=50` directly without manual `Number()` casts.
+
+### D19. `grain: 'wheat'` is a `z.literal`, not an enum (yet)
+
+V1 is wheat-only and we want a type error if someone forgets and ships a multi-grain UI without first widening the schema. The literal is trivially replaceable with `z.enum(['wheat', 'rice', ...])` later.
+
+### D20. Schemas import each other via `.js` extensions
+
+`packages/types` is ESM (`"type": "module"`). TypeScript with `moduleResolution: "Bundler"` plus Node ESM both happily resolve `./common.js` from a `.ts` source. Keeps consumer apps (`apps/api` ESM) working when @anaaj/types ships as compiled JS later.
