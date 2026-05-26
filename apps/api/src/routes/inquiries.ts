@@ -7,18 +7,79 @@ import { fail, ok } from '../lib/reply.js';
 
 const DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-function serialize(i: InquiryDoc) {
+interface PopulatedLot {
+  _id: Types.ObjectId;
+  variety: string;
+  quantity_quintals: number;
+  price_per_quintal: number;
+  pickup_location?: { city?: string };
+}
+
+interface PopulatedUser {
+  _id: Types.ObjectId;
+  name?: string;
+  phone?: string;
+  broker_mandi?: string;
+  buyer_company?: string;
+}
+
+type PopulatedInquiry = Omit<InquiryDoc, 'lot_id' | 'buyer_id' | 'broker_id'> & {
+  lot_id: PopulatedLot | Types.ObjectId;
+  buyer_id: PopulatedUser | Types.ObjectId;
+  broker_id: PopulatedUser | Types.ObjectId;
+};
+
+function lotSummary(field: PopulatedLot | Types.ObjectId | undefined) {
+  if (!field || field instanceof Types.ObjectId) return null;
   return {
-    _id: String(i._id),
-    lot_id: String(i.lot_id),
-    buyer_id: String(i.buyer_id),
-    broker_id: String(i.broker_id),
-    message: i.message,
-    status: i.status,
-    channel: i.channel,
-    created_at: i.created_at,
+    _id: String(field._id),
+    variety: field.variety,
+    quantity_quintals: field.quantity_quintals,
+    price_per_quintal: field.price_per_quintal,
+    city: field.pickup_location?.city ?? null,
   };
 }
+
+function userSummary(
+  field: PopulatedUser | Types.ObjectId | undefined,
+  opts: { revealPhone?: boolean } = {},
+) {
+  if (!field || field instanceof Types.ObjectId) return null;
+  return {
+    _id: String(field._id),
+    name: field.name ?? null,
+    phone: opts.revealPhone ? (field.phone ?? null) : null,
+    broker_mandi: field.broker_mandi ?? null,
+    buyer_company: field.buyer_company ?? null,
+  };
+}
+
+function serializeForBroker(i: PopulatedInquiry) {
+  return {
+    _id: String(i._id),
+    status: i.status,
+    channel: i.channel,
+    message: i.message,
+    created_at: i.created_at,
+    lot: lotSummary(i.lot_id),
+    counterparty: userSummary(i.buyer_id, { revealPhone: true }),
+  };
+}
+
+function serializeForBuyer(i: PopulatedInquiry) {
+  return {
+    _id: String(i._id),
+    status: i.status,
+    channel: i.channel,
+    message: i.message,
+    created_at: i.created_at,
+    lot: lotSummary(i.lot_id),
+    counterparty: userSummary(i.broker_id, { revealPhone: true }),
+  };
+}
+
+const LOT_FIELDS = '_id variety quantity_quintals price_per_quintal pickup_location.city';
+const USER_FIELDS = '_id name phone broker_mandi buyer_company';
 
 export default async function inquiriesRoutes(app: FastifyInstance) {
   // --- create ---
@@ -32,7 +93,6 @@ export default async function inquiriesRoutes(app: FastifyInstance) {
 
     const buyerId = new Types.ObjectId(req.user.sub);
 
-    // 24h dedupe
     const since = new Date(Date.now() - DEDUPE_WINDOW_MS);
     const existing = await InquiryModel.findOne({
       buyer_id: buyerId,
@@ -58,16 +118,31 @@ export default async function inquiriesRoutes(app: FastifyInstance) {
     LotModel.updateOne({ _id: lot._id }, { $inc: { inquiry_count: 1 } }).catch((err) =>
       app.log.warn({ err }, 'inquiry_count increment failed'),
     );
-    return ok(reply, { inquiry: serialize(inquiry) }, 201);
+    return ok(
+      reply,
+      {
+        inquiry: {
+          _id: String(inquiry._id),
+          status: inquiry.status,
+          channel: inquiry.channel,
+          created_at: inquiry.created_at,
+        },
+      },
+      201,
+    );
   });
 
   // --- buyer's outgoing ---
   app.get('/inquiries/sent', { preHandler: [app.requireRole('buyer')] }, async (req, reply) => {
     const buyerId = new Types.ObjectId(req.user.sub);
-    const items = await InquiryModel.find({ buyer_id: buyerId })
+    const docs = await InquiryModel.find({ buyer_id: buyerId })
+      .populate({ path: 'lot_id', select: LOT_FIELDS })
+      .populate({ path: 'broker_id', select: USER_FIELDS })
       .sort({ created_at: -1 })
       .limit(100);
-    return ok(reply, { items: items.map(serialize) });
+    return ok(reply, {
+      items: docs.map((d) => serializeForBuyer(d as unknown as PopulatedInquiry)),
+    });
   });
 
   // --- broker's incoming ---
@@ -76,10 +151,14 @@ export default async function inquiriesRoutes(app: FastifyInstance) {
     { preHandler: [app.requireRole('broker')] },
     async (req, reply) => {
       const brokerId = new Types.ObjectId(req.user.sub);
-      const items = await InquiryModel.find({ broker_id: brokerId })
+      const docs = await InquiryModel.find({ broker_id: brokerId })
+        .populate({ path: 'lot_id', select: LOT_FIELDS })
+        .populate({ path: 'buyer_id', select: USER_FIELDS })
         .sort({ created_at: -1 })
         .limit(100);
-      return ok(reply, { items: items.map(serialize) });
+      return ok(reply, {
+        items: docs.map((d) => serializeForBroker(d as unknown as PopulatedInquiry)),
+      });
     },
   );
 
@@ -99,7 +178,9 @@ export default async function inquiriesRoutes(app: FastifyInstance) {
       }
       inquiry.status = body.status;
       await inquiry.save();
-      return ok(reply, { inquiry: serialize(inquiry) });
+      return ok(reply, {
+        inquiry: { _id: String(inquiry._id), status: inquiry.status, channel: inquiry.channel },
+      });
     },
   );
 }
