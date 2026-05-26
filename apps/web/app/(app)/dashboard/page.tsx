@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   const actions = ROLE_ACTIONS[me.role] ?? [];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="mx-auto max-w-4xl px-4 py-6 md:py-10">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <p className="text-sm text-neutral-500">

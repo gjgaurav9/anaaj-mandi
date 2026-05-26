@@ -3,46 +3,32 @@ import { Button, Card, CardBody } from '@anaaj/ui';
 import { PriceTicker } from '@/components/PriceTicker';
 
 const STEPS_BY_ROLE = {
-  seller: [
-    {
-      title: 'List your wheat',
-      body: 'Variety, quantity, price, photos — 2 minutes pe ho jata hai.',
-    },
-    {
-      title: 'Buyer connect karte hain',
-      body: 'WhatsApp pe seedha buyer aapse baat karega. No middleman fees.',
-    },
-    {
-      title: 'Sale record karo',
-      body: 'Sale ho jane ke baad app me record kar do — apna history banta hai.',
-    },
-  ],
   broker: [
     {
-      title: 'Apne sellers ki listings post karo',
-      body: 'Bina KYC hassle ke, aap khud lot create karke buyer tak bhej sakte ho.',
+      title: 'Apne farmers ki listings upload karo',
+      body: 'Variety, quantity, ₹/qtl, quality — 2 minute me lot publish ho jata hai.',
     },
     {
-      title: 'Inquiries handle karo',
-      body: 'Buyer ki inquiry aapko app me bhi milegi, aur WhatsApp pe bhi.',
+      title: 'Buyer aap pe inquire karte hain',
+      body: 'WhatsApp pe seedha buyer aapko message karega. App me bhi inquiry record ho jati hai.',
     },
     {
-      title: 'Trust build karo',
-      body: 'Verified KYC se aapke listings priority me dikhte hain.',
+      title: 'Deal close karo, history banao',
+      body: 'Verified KYC + recorded transactions se trust score badhta hai.',
     },
   ],
   buyer: [
     {
       title: 'Browse karo',
-      body: 'Indore aur aas-paas ki saari wheat listings ek jagah pe.',
+      body: 'Indore aur aas-paas ki saari active wheat listings ek hi jagah pe.',
     },
     {
       title: 'Variety + quality compare karo',
-      body: 'Moisture, foreign matter, protein — har lot ka spec available hai.',
+      body: 'Moisture, foreign matter, broken %, protein — har lot ka spec available hai.',
     },
     {
       title: 'WhatsApp pe connect karo',
-      body: 'Direct seller/broker se baat. Mandi rate live dikhta hai.',
+      body: 'Broker se direct baat. Mandi rate bhi live dikhta hai.',
     },
   ],
 };
@@ -57,12 +43,12 @@ export default function LandingPage() {
             <span className="inline-flex items-center rounded-full bg-wheat-100 px-3 py-1 text-xs font-medium text-wheat-600">
               Indore · Madhya Pradesh
             </span>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
-              Wheat trade ka <span className="text-wheat-600">sabse seedha</span> raasta.
+            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+              Mandi ka <span className="text-wheat-600">sabse seedha</span> wheat marketplace.
             </h1>
-            <p className="mt-4 text-lg text-neutral-700">
-              Anaaj Mandi connects farmers, brokers aur buyers — bina commission, bina paperwork.
-              Listing dekho, WhatsApp pe connect karo, deal ho jaye.
+            <p className="mt-4 text-base text-neutral-700 md:text-lg">
+              Brokers apne farmers ki listings upload karte hain, buyers WhatsApp pe seedha connect
+              karte hain. Bina commission, bina paperwork.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/browse">
@@ -70,7 +56,7 @@ export default function LandingPage() {
               </Link>
               <Link href="/signup">
                 <Button size="lg" variant="secondary">
-                  Apni listing daalo
+                  Sign up as broker / buyer
                 </Button>
               </Link>
             </div>
@@ -82,9 +68,11 @@ export default function LandingPage() {
       <PriceTicker />
 
       {/* How it works */}
-      <section className="mx-auto max-w-6xl px-4 py-12">
-        <h2 className="text-2xl font-bold tracking-tight">How it works</h2>
-        <p className="mt-1 text-neutral-600">Same app, teen alag perspectives. Choose your role:</p>
+      <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+        <h2 className="text-2xl font-bold tracking-tight md:text-3xl">How it works</h2>
+        <p className="mt-1 text-neutral-600">
+          Aap broker ho ya buyer — same app, alag perspective.
+        </p>
 
         <Tabs />
       </section>
@@ -93,17 +81,15 @@ export default function LandingPage() {
 }
 
 function Tabs() {
-  // SSR-friendly "anchor tabs" — no JS needed.
-  const roles: Array<{ id: string; label: string }> = [
-    { id: 'seller', label: 'Sellers (kisaan/trader)' },
-    { id: 'broker', label: 'Brokers (mandi)' },
-    { id: 'buyer', label: 'Buyers (mill/exporter)' },
+  const roles: Array<{ id: keyof typeof STEPS_BY_ROLE; label: string }> = [
+    { id: 'broker', label: 'Brokers (Mandi)' },
+    { id: 'buyer', label: 'Buyers (Mill / Exporter)' },
   ];
 
   return (
     <div className="mt-6 space-y-10">
       {roles.map((r) => {
-        const steps = STEPS_BY_ROLE[r.id as keyof typeof STEPS_BY_ROLE];
+        const steps = STEPS_BY_ROLE[r.id];
         return (
           <div key={r.id} id={r.id}>
             <h3 className="text-lg font-semibold text-wheat-600">{r.label}</h3>

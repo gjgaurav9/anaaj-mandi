@@ -13,10 +13,5 @@ body {
 }
 
 body {
-  @apply bg-neutral-100 text-neutral-900 antialiased;
-}
-
-/* Mobile-app frame: the centered column that holds everything. */
-.app-shell {
-  @apply mx-auto min-h-dvh w-full max-w-md bg-white shadow-xl shadow-neutral-200/40;
+  @apply bg-white text-neutral-900 antialiased md:bg-neutral-50;
 }

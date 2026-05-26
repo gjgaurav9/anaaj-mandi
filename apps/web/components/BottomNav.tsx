@@ -45,7 +45,7 @@ export function BottomNav({ role }: { role: Role }) {
     <nav
       role="navigation"
       aria-label="Primary"
-      className="sticky bottom-0 z-30 grid h-16 grid-cols-[repeat(auto-fit,minmax(0,1fr))] border-t border-neutral-200 bg-white"
+      className="sticky bottom-0 z-30 grid h-16 border-t border-neutral-200 bg-white md:hidden"
       style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
     >
       {tabs.map((t) => {

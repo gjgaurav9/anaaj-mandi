@@ -21,6 +21,10 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@anaaj/ui', '@anaaj/types'],
   images: {
+    // Allow SVG sources (placehold.co default) with a strict CSP so the
+    // <img> can't execute scripts. PNG/JPG is preferred; SVG is the fallback.
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'placehold.co' },

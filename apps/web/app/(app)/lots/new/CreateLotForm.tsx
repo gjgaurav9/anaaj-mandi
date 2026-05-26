@@ -28,7 +28,7 @@ const VARIETY_PHOTO_BG: Record<string, { bg: string; fg: string }> = {
 function defaultPhotoFor(variety: string): string {
   const palette = VARIETY_PHOTO_BG[variety] ?? VARIETY_PHOTO_BG.lokwan!;
   const label = variety.replace('_', '+');
-  return `https://placehold.co/800x600/${palette.bg}/${palette.fg}?text=${label}+wheat`;
+  return `https://placehold.co/800x600/${palette.bg}/${palette.fg}/png?text=${label}+wheat`;
 }
 
 const FormSchema = z.object({

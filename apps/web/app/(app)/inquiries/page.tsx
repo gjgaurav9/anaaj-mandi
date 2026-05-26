@@ -65,12 +65,12 @@ export default async function InquiriesPage() {
   }
 
   return (
-    <div>
-      <div className="border-b border-neutral-200 bg-white px-4 py-3">
-        <h1 className="text-lg font-semibold tracking-tight">
+    <div className="mx-auto max-w-3xl">
+      <div className="border-b border-neutral-200 bg-white px-4 py-3 md:py-4">
+        <h1 className="text-lg font-semibold tracking-tight md:text-2xl">
           {me.role === 'broker' ? 'Buyer inquiries' : 'Meri inquiries'}
         </h1>
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-neutral-500 md:text-sm">
           {me.role === 'broker'
             ? 'Aap pe interest karne wale buyers — WhatsApp pe inhi se baat hui hai.'
             : 'Jin lots me aapne interest dikhaya hai.'}

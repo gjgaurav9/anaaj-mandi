@@ -42,10 +42,10 @@ export default async function MyLotsPage({ searchParams }: MineLotsPageProps) {
   const filtered = filter ? items.filter((i) => i.status === filter) : items;
 
   return (
-    <div>
-      <div className="border-b border-neutral-200 bg-white px-4 py-3">
+    <div className="mx-auto max-w-4xl">
+      <div className="border-b border-neutral-200 bg-white px-4 py-3 md:py-4">
         <div className="flex items-baseline justify-between gap-2">
-          <h1 className="text-lg font-semibold tracking-tight">Meri listings</h1>
+          <h1 className="text-lg font-semibold tracking-tight md:text-2xl">Meri listings</h1>
           <Link href="/lots/new">
             <Button size="sm">+ Add</Button>
           </Link>
@@ -60,7 +60,7 @@ export default async function MyLotsPage({ searchParams }: MineLotsPageProps) {
         </div>
       </div>
 
-      <div className="space-y-3 px-4 py-4">
+      <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2">
         {error && <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
         {!error && filtered.length === 0 && (
           <div className="rounded-md border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500">

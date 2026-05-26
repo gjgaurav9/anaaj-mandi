@@ -119,8 +119,8 @@ function photosForVariety(variety: keyof typeof VARIETY_PHOTO_BG): string[] {
   const palette = VARIETY_PHOTO_BG[variety] ?? VARIETY_PHOTO_BG.lokwan!;
   const label = variety.replace('_', '+');
   return [
-    `https://placehold.co/800x600/${palette.bg}/${palette.fg}?text=${label}+wheat`,
-    `https://placehold.co/800x600/${palette.bg}/${palette.fg}?text=lot+photo+2`,
+    `https://placehold.co/800x600/${palette.bg}/${palette.fg}/png?text=${label}+wheat`,
+    `https://placehold.co/800x600/${palette.bg}/${palette.fg}/png?text=lot+photo+2`,
   ];
 }
 
