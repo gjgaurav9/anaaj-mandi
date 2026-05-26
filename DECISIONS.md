@@ -202,6 +202,22 @@ Server takes the existing `lot.photos`, concatenates new URLs, then slices to 5.
 
 One line guards the whole namespace. Per-route preHandlers would duplicate the check on every admin endpoint.
 
+### D48. Web reads root `.env` via an inline loader in `next.config.mjs`
+
+`next dev` only looks at app-local `.env` files. To keep one root `.env` as the source of truth, `apps/web/next.config.mjs` reads `../../.env` (if present) at config time and stamps the variables into `process.env`. Saves a per-app `.env` duplicate and avoids a dotenv-cli dev dependency.
+
+### D49. Relative imports inside packages consumed by Next don't use `.js` extensions
+
+Next's webpack resolver doesn't substitute `.js` → `.ts` when transpiling `packages/ui` and other workspace packages. So `packages/ui/src/index.ts` imports as `'./cn'` (no extension). For packages only consumed by `tsx` / Node (`@anaaj/db`, internal API code, internal `@anaaj/types`), `.js` extensions stay. The split mirrors what the tooling actually understands.
+
+### D50. Pages live under `app/(public)/` and the (public) layout adds nav + footer
+
+Route groups (`(public)`, `(auth)`, `(app)`, `(admin)`) keep URLs flat but let each section share its own chrome. Step-1 placeholder `app/page.tsx` was removed and replaced with `app/(public)/page.tsx`.
+
+### D51. WhatsApp button is rendered as "Sign in to connect" until auth lands
+
+`apps/web/components/WhatsAppButton.tsx` is a client component that checks an `authed` prop set by the SSR cookie-presence check. Until step 7 wires the cookie through the web's `/api` proxy, the dev cookie sits on `:4000` only, so step 6 always shows the signed-out fallback. That's the desired behavior — clicking it takes the buyer to `/login` (still to be built).
+
 ### D47. `/admin/prices` upserts on the `(mandi, variety, date)` unique key
 
 Re-posting the same combination overwrites yesterday's value rather than throwing a duplicate-key error. After write, the redis cache key for that date is invalidated so the next `/prices/today` is a fresh DB read.
