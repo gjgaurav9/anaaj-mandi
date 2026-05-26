@@ -1,6 +1,10 @@
 import Link from 'next/link';
+import { getMe } from '@/lib/me';
+import { LogoutButton } from './LogoutButton';
 
-export function SiteNav() {
+export async function SiteNav() {
+  const me = await getMe();
+
   return (
     <header className="sticky top-0 z-20 border-b border-wheat-100 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
@@ -20,12 +24,27 @@ export function SiteNav() {
           >
             Browse
           </Link>
-          <Link
-            href="/login"
-            className="rounded-md bg-wheat-500 px-3 py-1.5 font-medium text-white hover:bg-wheat-600"
-          >
-            Sign in
-          </Link>
+          {me ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="rounded-md px-3 py-1.5 text-neutral-700 hover:bg-wheat-50"
+              >
+                Dashboard
+              </Link>
+              <span className="hidden text-xs text-neutral-500 sm:inline">
+                {me.name ?? me.phone} · <span className="capitalize">{me.role}</span>
+              </span>
+              <LogoutButton />
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-md bg-wheat-500 px-3 py-1.5 font-medium text-white hover:bg-wheat-600"
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
       </div>
     </header>

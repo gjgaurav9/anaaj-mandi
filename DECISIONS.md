@@ -214,6 +214,38 @@ Next's webpack resolver doesn't substitute `.js` → `.ts` when transpiling `pac
 
 Route groups (`(public)`, `(auth)`, `(app)`, `(admin)`) keep URLs flat but let each section share its own chrome. Step-1 placeholder `app/page.tsx` was removed and replaced with `app/(public)/page.tsx`.
 
+---
+
+## Step 7 — web auth (signup + login OTP)
+
+### D52. `apps/web/app/api/[...path]/route.ts` is a same-origin reverse proxy
+
+Browser hits `/api/...` on `:3000`; the handler forwards to `:4000` and re-emits each `Set-Cookie` so the JWT lands on the **web** origin. That's what unblocks the D1 cookie story: server components on the web can read the session cookie via `cookies()`, and in production where web + api share a host the proxy becomes a no-op subpath.
+
+### D53. `Headers.getSetCookie()` for multi-cookie forwarding
+
+Default `Headers.forEach` collapses multiple `Set-Cookie` lines into a comma-joined string, which corrupts cookie attributes. The proxy explicitly calls `getSetCookie()` (Node 20+ undici) and re-appends each cookie individually.
+
+### D54. Middleware only checks cookie presence, role is enforced server-side
+
+`apps/web/middleware.ts` runs in the edge runtime — it can't decode the JWT without exposing the secret. So it just gates anonymous users from `/dashboard`, `/onboarding`, `/lots/new`, `/lots/mine`, `/inquiries`, `/profile`, and `/admin/*`. The actual role check for admin happens in the API and in admin server-component fetches.
+
+### D55. Login and signup are client component step-machines
+
+`useState<'role' | 'phone' | 'otp' | 'name'>` drives a flat switch. React Hook Form is overkill for one-field steps; we go raw `useState` + the small `PhoneInput` / `OTPInput` components. Form-heavy screens (create lot, profile edit in step 8) will use RHF + Zod.
+
+### D56. Signup uses `PATCH /me` for the name step, not a fresh user creation
+
+After OTP verify succeeds with `role`, the user shell exists. The name step PATCHes `/me` with `{ name }`. Keeps the user-creation flow single-shot and lets us add more profile-completion steps later without refactoring the auth route.
+
+### D57. `SiteNav` is async and reads `/me` via the server-side `apiFetch`
+
+Auth-aware nav (Dashboard / Sign out vs Sign in) hits the API on every page render. Acceptable for v1; in step 11 we'll consider caching via React's `cache()` or moving the user identity into a layout-level fetch.
+
+### D58. Stub `/dashboard`, `/onboarding`, `/profile` ship in step 7
+
+The auth flow has to land users _somewhere_, so we ship lightweight authed pages now and flesh them out in steps 8 / 9. The dashboard already role-switches its primary CTAs.
+
 ### D51. WhatsApp button is rendered as "Sign in to connect" until auth lands
 
 `apps/web/components/WhatsAppButton.tsx` is a client component that checks an `authed` prop set by the SSR cookie-presence check. Until step 7 wires the cookie through the web's `/api` proxy, the dev cookie sits on `:4000` only, so step 6 always shows the signed-out fallback. That's the desired behavior — clicking it takes the buyer to `/login` (still to be built).
