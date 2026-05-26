@@ -5,8 +5,10 @@ export type TransactionStatus = 'agreed' | 'shipped' | 'delivered' | 'disputed' 
 export interface ITransaction {
   lot_id: Types.ObjectId;
   buyer_id: Types.ObjectId;
-  seller_id: Types.ObjectId;
-  broker_id?: Types.ObjectId;
+  broker_id: Types.ObjectId;
+  /** Snapshot at time of sale — frozen even if the broker edits the lot. */
+  seller_name: string;
+  seller_phone: string;
   quantity_quintals: number;
   price_per_quintal: number;
   total_amount: number;
@@ -20,8 +22,9 @@ const transactionSchema = new Schema<ITransaction>(
   {
     lot_id: { type: Schema.Types.ObjectId, ref: 'Lot', required: true, index: true },
     buyer_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    seller_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    broker_id: { type: Schema.Types.ObjectId, ref: 'User' },
+    broker_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    seller_name: { type: String, required: true, minlength: 2, maxlength: 80 },
+    seller_phone: { type: String, required: true, match: /^\+91[6-9]\d{9}$/ },
     quantity_quintals: { type: Number, required: true, min: 0 },
     price_per_quintal: { type: Number, required: true, min: 0 },
     total_amount: { type: Number, required: true, min: 0 },

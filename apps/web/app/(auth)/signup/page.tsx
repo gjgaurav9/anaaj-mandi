@@ -8,25 +8,19 @@ import { OTPInput } from '@/components/OTPInput';
 import { clientFetch, ClientApiError } from '@/lib/clientApi';
 
 type Step = 'role' | 'phone' | 'otp' | 'name';
-type Role = 'seller' | 'broker' | 'buyer';
+type Role = 'broker' | 'buyer';
 
 const ROLE_CARDS: Array<{ id: Role; title: string; sub: string; emoji: string }> = [
   {
-    id: 'seller',
-    title: 'Seller (Kisaan / Trader)',
-    sub: 'List your wheat lots and connect directly with buyers.',
-    emoji: '🌾',
-  },
-  {
     id: 'broker',
     title: 'Broker (Mandi)',
-    sub: 'Post listings on behalf of sellers and earn trust with verified KYC.',
+    sub: 'Apne farmers ki listings post karo, buyers se WhatsApp pe connect karo.',
     emoji: '🤝',
   },
   {
     id: 'buyer',
     title: 'Buyer (Mill / Exporter)',
-    sub: 'Find wheat by variety, quality and price. WhatsApp pe direct connect.',
+    sub: 'Variety, quality aur price ke hisaab se wheat dhundo. Broker se direct connect.',
     emoji: '🏭',
   },
 ];

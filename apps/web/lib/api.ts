@@ -51,10 +51,16 @@ export async function apiFetch<T>(
   return json.data;
 }
 
+export interface EmbeddedSeller {
+  name: string;
+  phone: string | null; // null when the viewer isn't the owning broker or admin
+  village: string | null;
+}
+
 export interface LotListItem {
   _id: string;
-  seller_id: string;
-  broker_id: string | null;
+  broker_id: string;
+  seller: EmbeddedSeller;
   variety: 'lokwan' | 'sharbati' | 'sehore' | 'mp_sihore' | 'other';
   quantity_quintals: number;
   price_per_quintal: number;
@@ -72,6 +78,13 @@ export interface LotListItem {
   created_at: string;
 }
 
+export interface PublicBroker {
+  _id: string;
+  name: string | null;
+  broker_mandi: string | null;
+  phone?: string; // only present for authed viewers
+}
+
 export interface LotDetail extends LotListItem {
   quality: {
     moisture_pct: number;
@@ -79,8 +92,7 @@ export interface LotDetail extends LotListItem {
     broken_pct: number;
     protein_pct?: number;
   };
-  seller: { _id: string; name: string | null; role: string; broker_mandi: string | null } | null;
-  broker: { _id: string; name: string | null; role: string; broker_mandi: string | null } | null;
+  broker: PublicBroker | null;
 }
 
 export interface PriceTickItem {

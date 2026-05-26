@@ -57,8 +57,8 @@ export default async function adminRoutes(app: FastifyInstance) {
     return ok(reply, {
       items: items.map((l) => ({
         _id: String(l._id),
-        seller_id: String(l.seller_id),
-        broker_id: l.broker_id ? String(l.broker_id) : null,
+        broker_id: String(l.broker_id),
+        seller: { name: l.seller.name, phone: l.seller.phone, village: l.seller.village ?? null },
         variety: l.variety,
         quantity_quintals: l.quantity_quintals,
         price_per_quintal: l.price_per_quintal,

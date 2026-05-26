@@ -1,6 +1,6 @@
 import { Schema, model, type HydratedDocument, type Model, type Types } from 'mongoose';
 
-export type Role = 'seller' | 'broker' | 'buyer' | 'admin';
+export type Role = 'broker' | 'buyer' | 'admin';
 export type KycStatus = 'pending' | 'verified' | 'rejected';
 
 export interface IKyc {
@@ -91,7 +91,7 @@ const userSchema = new Schema<IUser>(
     name: { type: String, maxlength: 80 },
     role: {
       type: String,
-      enum: ['seller', 'broker', 'buyer', 'admin'],
+      enum: ['broker', 'buyer', 'admin'],
       required: true,
     },
     kyc: { type: kycSchema, default: () => ({ status: 'pending' }) },

@@ -15,6 +15,7 @@ export {
   type ILot,
   type ILotQuality,
   type ILotPickupLocation,
+  type IEmbeddedSeller,
   type Variety,
   type LotStatus,
 } from './models/Lot.js';

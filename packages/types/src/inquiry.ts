@@ -11,7 +11,8 @@ export const InquirySchema = z.object({
   _id: ObjectIdSchema,
   lot_id: ObjectIdSchema,
   buyer_id: ObjectIdSchema,
-  seller_id: ObjectIdSchema,
+  /** Broker who listed the lot — the actual person the buyer talks to. */
+  broker_id: ObjectIdSchema,
   message: z.string().max(500),
   status: InquiryStatusSchema.default('sent'),
   channel: InquiryChannelSchema,
@@ -19,7 +20,7 @@ export const InquirySchema = z.object({
 });
 export type Inquiry = z.infer<typeof InquirySchema>;
 
-/** POST /inquiries body. buyer_id + seller_id are filled server-side. */
+/** POST /inquiries body. buyer_id + broker_id are filled server-side. */
 export const CreateInquiryInputSchema = z.object({
   lot_id: ObjectIdSchema,
   message: z.string().max(500).default(''),
@@ -27,7 +28,6 @@ export const CreateInquiryInputSchema = z.object({
 });
 export type CreateInquiryInput = z.infer<typeof CreateInquiryInputSchema>;
 
-/** PATCH /inquiries/:id/status — seller-side updates. */
 export const UpdateInquiryStatusInputSchema = z.object({
   status: InquiryStatusSchema,
 });

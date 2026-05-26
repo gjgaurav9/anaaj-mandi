@@ -32,7 +32,9 @@ export type GeoPoint = z.infer<typeof GeoPointSchema>;
 
 // ---------- Enums ----------
 
-export const RoleSchema = z.enum(['seller', 'broker', 'buyer', 'admin']);
+// Sellers (farmers) are not app users in v1 — they're embedded on the lot.
+// The role enum covers only people who actually sign in.
+export const RoleSchema = z.enum(['broker', 'buyer', 'admin']);
 export type Role = z.infer<typeof RoleSchema>;
 
 export const GrainSchema = z.literal('wheat'); // v1 is wheat-only; schema is extensible later

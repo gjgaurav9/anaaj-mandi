@@ -6,7 +6,8 @@ export type InquiryChannel = 'whatsapp' | 'call' | 'platform';
 export interface IInquiry {
   lot_id: Types.ObjectId;
   buyer_id: Types.ObjectId;
-  seller_id: Types.ObjectId;
+  /** Broker who listed the lot — also the person the buyer is connecting with. */
+  broker_id: Types.ObjectId;
   message: string;
   status: InquiryStatus;
   channel: InquiryChannel;
@@ -17,7 +18,7 @@ const inquirySchema = new Schema<IInquiry>(
   {
     lot_id: { type: Schema.Types.ObjectId, ref: 'Lot', required: true, index: true },
     buyer_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    seller_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    broker_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     message: { type: String, maxlength: 500, default: '' },
     status: {
       type: String,

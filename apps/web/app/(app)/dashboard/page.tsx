@@ -4,26 +4,20 @@ import { Badge, Button, Card, CardBody } from '@anaaj/ui';
 import { getMe } from '@/lib/me';
 
 const ROLE_HEADLINE: Record<string, string> = {
-  seller: 'Apni listings manage karo',
-  broker: 'Mandi pe seller-buyer connect karo',
+  broker: 'Apne farmers ki listings manage karo',
   buyer: 'Sahi rate ka wheat dhundo',
   admin: 'KYC + listings moderate karo',
 };
 
 const ROLE_ACTIONS: Record<string, Array<{ href: string; label: string; primary?: boolean }>> = {
-  seller: [
-    { href: '/lots/new', label: 'List a new lot', primary: true },
-    { href: '/lots/mine', label: 'My lots' },
-    { href: '/inquiries', label: 'Inquiries' },
-  ],
   broker: [
-    { href: '/lots/new', label: 'List on behalf of seller', primary: true },
-    { href: '/lots/mine', label: 'My listings' },
-    { href: '/inquiries', label: 'Inquiries' },
+    { href: '/lots/new', label: 'Naya lot upload karo', primary: true },
+    { href: '/lots/mine', label: 'Meri listings' },
+    { href: '/inquiries', label: 'Buyer inquiries' },
   ],
   buyer: [
-    { href: '/browse', label: 'Browse wheat lots', primary: true },
-    { href: '/inquiries', label: 'My inquiries' },
+    { href: '/browse', label: 'Wheat lots browse karo', primary: true },
+    { href: '/inquiries', label: 'Meri inquiries' },
   ],
   admin: [
     { href: '/admin', label: 'Open admin console', primary: true },

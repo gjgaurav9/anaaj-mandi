@@ -7,15 +7,17 @@ import { InquiryModel } from './models/Inquiry.js';
 import { TransactionModel } from './models/Transaction.js';
 
 /**
- * Seed Anaaj Mandi with a demo-able state:
- *   1 admin · 5 sellers · 3 brokers · 5 buyers · 10 wheat lots · today's price ticks.
+ * Seed Anaaj Mandi v1 (broker-pivot edition).
  *
- * Refuses to run in production by default. Override with FORCE_SEED=true if you really mean it.
+ *   1 admin · 3 brokers · 5 buyers · 10 wheat lots · today's price ticks.
+ *
+ * Farmers (sellers) are NOT users — their contact info lives embedded on
+ * each lot, captured by the broker offline.
+ *
+ * Refuses to run in production by default. Override with FORCE_SEED=true.
  */
 
 const MP_STATE = 'Madhya Pradesh';
-// UTC midnight so PriceTick date matches the /prices/today server filter
-// (which is also UTC-midnight based) regardless of the host timezone.
 const today = new Date();
 today.setUTCHours(0, 0, 0, 0);
 
@@ -33,20 +35,12 @@ const GEO = {
   depalpur: [75.5436, 22.847] as [number, number],
 };
 
-// ---- demo users ----
 const USERS = {
   admin: {
     phone: '+919800000099',
     name: 'Anaaj Admin',
     role: 'admin' as const,
   },
-  sellers: [
-    { phone: '+919800000001', name: 'Ramesh Patidar', city: 'Indore', geo: GEO.indoreCity },
-    { phone: '+919800000002', name: 'Suresh Yadav', city: 'Depalpur', geo: GEO.depalpur },
-    { phone: '+919800000003', name: 'Manoj Verma', city: 'Mhow', geo: GEO.mhow },
-    { phone: '+919800000004', name: 'Kailash Sharma', city: 'Sanwer', geo: GEO.depalpur },
-    { phone: '+919800000005', name: 'Pankaj Chouhan', city: 'Betma', geo: GEO.betma },
-  ],
   brokers: [
     {
       phone: '+919800000011',
@@ -112,9 +106,27 @@ const USERS = {
   ],
 };
 
+// placehold.co generates colored SVGs on demand — reliable, no external account
+// needed, palette tuned to match the wheat theme.
+const VARIETY_PHOTO_BG: Record<string, { bg: string; fg: string }> = {
+  lokwan: { bg: 'd4a017', fg: 'ffffff' },
+  sharbati: { bg: 'a87a0c', fg: 'ffffff' },
+  sehore: { bg: 'e6b85b', fg: '4b3a0d' },
+  mp_sihore: { bg: 'fff8c4', fg: '4b3a0d' },
+};
+
+function photosForVariety(variety: keyof typeof VARIETY_PHOTO_BG): string[] {
+  const palette = VARIETY_PHOTO_BG[variety] ?? VARIETY_PHOTO_BG.lokwan!;
+  const label = variety.replace('_', '+');
+  return [
+    `https://placehold.co/800x600/${palette.bg}/${palette.fg}?text=${label}+wheat`,
+    `https://placehold.co/800x600/${palette.bg}/${palette.fg}?text=lot+photo+2`,
+  ];
+}
+
 function buildLot(args: {
-  sellerId: Types.ObjectId;
-  brokerId?: Types.ObjectId;
+  brokerId: Types.ObjectId;
+  seller: { name: string; phone: string; village?: string };
   variety: 'lokwan' | 'sharbati' | 'sehore' | 'mp_sihore';
   qty: number;
   pricePaise: number;
@@ -132,8 +144,8 @@ function buildLot(args: {
   const available = new Date(today);
   available.setDate(available.getDate() + args.daysFromNow);
   return {
-    seller_id: args.sellerId,
     broker_id: args.brokerId,
+    seller: args.seller,
     grain: 'wheat' as const,
     variety: args.variety,
     quantity_quintals: args.qty,
@@ -144,10 +156,7 @@ function buildLot(args: {
       broken_pct: args.broken,
       protein_pct: args.protein,
     },
-    photos: [
-      'https://res.cloudinary.com/demo/image/upload/v1/anaaj-mandi/lots/wheat-stack-1.jpg',
-      'https://res.cloudinary.com/demo/image/upload/v1/anaaj-mandi/lots/wheat-stack-2.jpg',
-    ],
+    photos: photosForVariety(args.variety),
     pickup_location: {
       city: args.city,
       district: args.district,
@@ -158,6 +167,17 @@ function buildLot(args: {
     status: args.status ?? 'active',
   };
 }
+
+// ---- demo farmers (sourced offline; live embedded on lots) ----
+const FARMERS = {
+  ramesh: { name: 'Ramesh Patidar', phone: '+919812345001', village: 'Indore' },
+  suresh: { name: 'Suresh Yadav', phone: '+919812345002', village: 'Depalpur' },
+  manoj: { name: 'Manoj Verma', phone: '+919812345003', village: 'Mhow' },
+  kailash: { name: 'Kailash Sharma', phone: '+919812345004', village: 'Sanwer' },
+  pankaj: { name: 'Pankaj Chouhan', phone: '+919812345005', village: 'Betma' },
+  dineshDhar: { name: 'Dinesh Solanki', phone: '+919812345006', village: 'Dhar' },
+  ravi: { name: 'Ravi Gurjar', phone: '+919812345007', village: 'Sehore' },
+};
 
 async function run() {
   if (process.env.NODE_ENV === 'production' && process.env.FORCE_SEED !== 'true') {
@@ -182,22 +202,6 @@ async function run() {
     role: USERS.admin.role,
     kyc: { status: 'verified', verified_at: today },
   });
-
-  const sellers = await UserModel.insertMany(
-    USERS.sellers.map((s) => ({
-      phone: s.phone,
-      name: s.name,
-      role: 'seller' as const,
-      kyc: { status: 'verified', verified_at: today, pan_last4: '1234' },
-      location: {
-        city: s.city,
-        district: 'Indore',
-        state: MP_STATE,
-        pincode: '452001',
-        geo: { type: 'Point', coordinates: s.geo },
-      },
-    })),
-  );
 
   const brokers = await UserModel.insertMany(
     USERS.brokers.map((b) => ({
@@ -236,25 +240,17 @@ async function run() {
     })),
   );
 
-  console.log(
-    `  admin=${admin._id.toString()} sellers=${sellers.length} brokers=${brokers.length} buyers=${buyers.length}`,
-  );
+  console.log(`  admin=${admin._id.toString()} brokers=${brokers.length} buyers=${buyers.length}`);
 
-  // InferSchemaType doesn't model the auto-injected _id, so we narrow at extraction.
-  const s0 = sellers[0]!._id as unknown as Types.ObjectId;
-  const s1 = sellers[1]!._id as unknown as Types.ObjectId;
-  const s2 = sellers[2]!._id as unknown as Types.ObjectId;
-  const s3 = sellers[3]!._id as unknown as Types.ObjectId;
-  const s4 = sellers[4]!._id as unknown as Types.ObjectId;
-  const b0 = brokers[0]!._id as unknown as Types.ObjectId;
-  const b1 = brokers[1]!._id as unknown as Types.ObjectId;
-  const b2 = brokers[2]!._id as unknown as Types.ObjectId;
+  const b0 = brokers[0]!._id as unknown as Types.ObjectId; // Lalit (Indore Chhawni)
+  const b1 = brokers[1]!._id as unknown as Types.ObjectId; // Vinod (Laxmibai Nagar)
+  const b2 = brokers[2]!._id as unknown as Types.ObjectId; // Mukesh (Dewas)
 
   console.log('→ inserting lots');
   const lots = [
     buildLot({
-      sellerId: s0,
       brokerId: b0,
+      seller: FARMERS.ramesh,
       variety: 'lokwan',
       qty: 120,
       pricePaise: 252000,
@@ -269,7 +265,8 @@ async function run() {
       daysFromNow: 2,
     }),
     buildLot({
-      sellerId: s1,
+      brokerId: b1,
+      seller: FARMERS.suresh,
       variety: 'sharbati',
       qty: 60,
       pricePaise: 318500,
@@ -284,8 +281,8 @@ async function run() {
       daysFromNow: 4,
     }),
     buildLot({
-      sellerId: s2,
       brokerId: b0,
+      seller: FARMERS.manoj,
       variety: 'mp_sihore',
       qty: 200,
       pricePaise: 268000,
@@ -299,7 +296,8 @@ async function run() {
       daysFromNow: 1,
     }),
     buildLot({
-      sellerId: s3,
+      brokerId: b1,
+      seller: FARMERS.kailash,
       variety: 'sehore',
       qty: 85,
       pricePaise: 261500,
@@ -314,8 +312,8 @@ async function run() {
       daysFromNow: 3,
     }),
     buildLot({
-      sellerId: s4,
       brokerId: b1,
+      seller: FARMERS.pankaj,
       variety: 'lokwan',
       qty: 150,
       pricePaise: 249000,
@@ -329,7 +327,8 @@ async function run() {
       daysFromNow: 5,
     }),
     buildLot({
-      sellerId: s0,
+      brokerId: b0,
+      seller: FARMERS.ramesh,
       variety: 'sharbati',
       qty: 45,
       pricePaise: 325000,
@@ -345,8 +344,8 @@ async function run() {
       status: 'draft',
     }),
     buildLot({
-      sellerId: s1,
       brokerId: b2,
+      seller: FARMERS.suresh,
       variety: 'lokwan',
       qty: 300,
       pricePaise: 254500,
@@ -361,7 +360,8 @@ async function run() {
       daysFromNow: 6,
     }),
     buildLot({
-      sellerId: s2,
+      brokerId: b2,
+      seller: FARMERS.manoj,
       variety: 'mp_sihore',
       qty: 90,
       pricePaise: 270000,
@@ -375,8 +375,8 @@ async function run() {
       daysFromNow: 2,
     }),
     buildLot({
-      sellerId: s3,
       brokerId: b0,
+      seller: FARMERS.ravi,
       variety: 'sehore',
       qty: 110,
       pricePaise: 263000,
@@ -390,7 +390,8 @@ async function run() {
       daysFromNow: 4,
     }),
     buildLot({
-      sellerId: s4,
+      brokerId: b2,
+      seller: FARMERS.dineshDhar,
       variety: 'sharbati',
       qty: 70,
       pricePaise: 322000,
@@ -464,9 +465,12 @@ async function run() {
 
   console.log('\n✓ seed complete. Demo accounts (OTP: 123456):');
   console.log(`  admin   : ${USERS.admin.phone}  (${USERS.admin.name})`);
-  console.log(`  seller  : ${USERS.sellers[0]!.phone}  (${USERS.sellers[0]!.name})`);
   console.log(`  broker  : ${USERS.brokers[0]!.phone}  (${USERS.brokers[0]!.name})`);
   console.log(`  buyer   : ${USERS.buyers[0]!.phone}  (${USERS.buyers[0]!.name})`);
+  console.log(`\nFarmers (offline contacts, not users):`);
+  for (const f of Object.values(FARMERS)) {
+    console.log(`  ${f.name.padEnd(22)} ${f.phone}  (${f.village})`);
+  }
 
   await disconnectDb();
 }

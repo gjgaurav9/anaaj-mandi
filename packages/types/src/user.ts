@@ -46,9 +46,10 @@ export const UserSchema = z.object({
   kyc: KycSchema.default({ status: 'pending' }),
   location: UserLocationSchema.optional(),
   business_name: z.string().max(120).optional(),
-  // role-specific
+  // broker-specific
   broker_mandi: z.string().max(80).optional(),
   broker_years: z.number().int().min(0).max(80).optional(),
+  // buyer-specific
   buyer_company: z.string().max(120).optional(),
   buyer_gst: z
     .string()

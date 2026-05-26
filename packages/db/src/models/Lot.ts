@@ -11,6 +11,13 @@ export interface ILotQuality {
   protein_pct?: number;
 }
 
+/** Farmer contact captured offline by the broker. Not a User. */
+export interface IEmbeddedSeller {
+  name: string;
+  phone: string; // E.164
+  village?: string;
+}
+
 export interface ILotPickupLocation {
   city: string;
   district: string;
@@ -19,8 +26,8 @@ export interface ILotPickupLocation {
 }
 
 export interface ILot {
-  seller_id: Types.ObjectId;
-  broker_id?: Types.ObjectId;
+  broker_id: Types.ObjectId;
+  seller: IEmbeddedSeller;
   grain: 'wheat';
   variety: Variety;
   quantity_quintals: number;
@@ -43,6 +50,15 @@ const qualitySchema = new Schema<ILotQuality>(
     foreign_matter_pct: { type: Number, required: true, min: 0, max: 20 },
     broken_pct: { type: Number, required: true, min: 0, max: 20 },
     protein_pct: { type: Number, min: 0, max: 20 },
+  },
+  { _id: false },
+);
+
+const embeddedSellerSchema = new Schema<IEmbeddedSeller>(
+  {
+    name: { type: String, required: true, minlength: 2, maxlength: 80 },
+    phone: { type: String, required: true, match: /^\+91[6-9]\d{9}$/ },
+    village: { type: String, maxlength: 80 },
   },
   { _id: false },
 );
@@ -73,8 +89,8 @@ const pickupLocationSchema = new Schema<ILotPickupLocation>(
 
 const lotSchema = new Schema<ILot>(
   {
-    seller_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    broker_id: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    broker_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    seller: { type: embeddedSellerSchema, required: true },
     grain: { type: String, enum: ['wheat'], required: true, default: 'wheat' },
     variety: {
       type: String,
@@ -111,7 +127,7 @@ const lotSchema = new Schema<ILot>(
 );
 
 lotSchema.index({ 'pickup_location.geo': '2dsphere' });
-lotSchema.index({ variety: 'text', 'pickup_location.city': 'text' });
+lotSchema.index({ variety: 'text', 'pickup_location.city': 'text', 'seller.name': 'text' });
 
 export type LotDoc = HydratedDocument<ILot> & { _id: Types.ObjectId };
 

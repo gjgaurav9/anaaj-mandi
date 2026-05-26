@@ -29,10 +29,9 @@ export default async function LotDetailPage({ params }: LotPageProps) {
   const sessionCookie = cookies().get(process.env.JWT_COOKIE_NAME ?? 'am_session');
   const authed = Boolean(sessionCookie?.value);
 
-  const sellerPhone = ''; // not exposed in the public lot detail; WhatsApp link
-  // is built when the buyer clicks. For now, fall back to a generic broker
-  // route handler that the API will replace with the real number after auth.
-  // (Auth flow + real wiring lands in step 9.)
+  // WhatsApp button connects buyer → broker (sellers are offline contacts only).
+  // Broker phone is only set on the response for authed viewers.
+  const brokerPhone = lot.broker?.phone ?? '';
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -134,13 +133,16 @@ export default async function LotDetailPage({ params }: LotPageProps) {
               <h2 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase">
                 Listed by
               </h2>
-              <div className="mt-1 font-medium">{lot.seller?.name ?? 'Verified seller'}</div>
-              {lot.broker && (
-                <div className="text-neutral-500">
-                  Through {lot.broker.name ?? 'broker'}
-                  {lot.broker.broker_mandi ? ` · ${lot.broker.broker_mandi}` : ''}
-                </div>
-              )}
+              <div className="mt-1 font-medium">
+                {lot.broker?.name ?? 'Verified broker'}
+                {lot.broker?.broker_mandi ? (
+                  <span className="text-neutral-500"> · {lot.broker.broker_mandi}</span>
+                ) : null}
+              </div>
+              <div className="text-neutral-500">
+                Farmer: <span className="font-medium text-neutral-700">{lot.seller.name}</span>
+                {lot.seller.village ? ` (${lot.seller.village})` : ''}
+              </div>
               <div className="mt-1 text-xs text-neutral-500">
                 {lot.view_count} views · {lot.inquiry_count} inquiries
               </div>
@@ -149,7 +151,7 @@ export default async function LotDetailPage({ params }: LotPageProps) {
 
           <WhatsAppButton
             authed={authed}
-            sellerPhone={sellerPhone}
+            sellerPhone={brokerPhone}
             variety={lot.variety}
             quantityQuintals={lot.quantity_quintals}
             pricePerQuintalPaise={lot.price_per_quintal}

@@ -5,6 +5,7 @@ import {
   HttpsUrlSchema,
   ObjectIdSchema,
   PaiseSchema,
+  PhoneSchema,
   PincodeSchema,
   QuintalSchema,
   VarietySchema,
@@ -21,6 +22,14 @@ export const LotQualitySchema = z.object({
 });
 export type LotQuality = z.infer<typeof LotQualitySchema>;
 
+/** Farmer info captured by the broker offline. The farmer is NOT a User. */
+export const EmbeddedSellerSchema = z.object({
+  name: z.string().min(2).max(80),
+  phone: PhoneSchema,
+  village: z.string().max(80).optional(),
+});
+export type EmbeddedSeller = z.infer<typeof EmbeddedSellerSchema>;
+
 export const LotPickupLocationSchema = z.object({
   city: z.string().min(2).max(80),
   district: z.string().min(2).max(80),
@@ -32,8 +41,8 @@ export type LotPickupLocation = z.infer<typeof LotPickupLocationSchema>;
 /** Full lot document as stored / returned by the API. */
 export const LotSchema = z.object({
   _id: ObjectIdSchema,
-  seller_id: ObjectIdSchema,
-  broker_id: ObjectIdSchema.optional(),
+  broker_id: ObjectIdSchema,
+  seller: EmbeddedSellerSchema,
   grain: GrainSchema,
   variety: VarietySchema,
   quantity_quintals: QuintalSchema.refine((n) => n >= 10, { message: 'min 10 quintals' }),
@@ -50,7 +59,7 @@ export const LotSchema = z.object({
 });
 export type Lot = z.infer<typeof LotSchema>;
 
-/** POST /lots input — server fills the rest. */
+/** POST /lots input — broker fills the rest. */
 export const CreateLotInputSchema = LotSchema.pick({
   variety: true,
   quantity_quintals: true,
@@ -58,16 +67,11 @@ export const CreateLotInputSchema = LotSchema.pick({
   quality: true,
   pickup_location: true,
   available_from: true,
+  seller: true,
 }).extend({
-  /** Always wheat in v1; optional in body, defaults server-side. */
   grain: GrainSchema.default('wheat'),
-  /** Empty allowed at create; photos can be added via /lots/:id/photos. */
+  /** Drafts may have no photos; required before going active (server-enforced). */
   photos: z.array(HttpsUrlSchema).max(5).default([]),
-  /** Brokers can pass a seller_id they're listing on behalf of. */
-  seller_id: ObjectIdSchema.optional(),
-  /** Brokers may self-attach when creating. */
-  broker_id: ObjectIdSchema.optional(),
-  /** Sellers can save a draft and publish later. */
   status: z.enum(['draft', 'active']).default('draft'),
 });
 export type CreateLotInput = z.infer<typeof CreateLotInputSchema>;
@@ -93,7 +97,6 @@ export const ListLotsQuerySchema = z.object({
 });
 export type ListLotsQuery = z.infer<typeof ListLotsQuerySchema>;
 
-/** POST /lots/:id/photos — body sent after browser uploads to Cloudinary. */
 export const AttachPhotosInputSchema = z.object({
   urls: z.array(HttpsUrlSchema).min(1).max(5),
 });

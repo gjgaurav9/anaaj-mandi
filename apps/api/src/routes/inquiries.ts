@@ -12,7 +12,7 @@ function serialize(i: InquiryDoc) {
     _id: String(i._id),
     lot_id: String(i.lot_id),
     buyer_id: String(i.buyer_id),
-    seller_id: String(i.seller_id),
+    broker_id: String(i.broker_id),
     message: i.message,
     status: i.status,
     channel: i.channel,
@@ -51,11 +51,10 @@ export default async function inquiriesRoutes(app: FastifyInstance) {
     const inquiry = await InquiryModel.create({
       lot_id: lot._id,
       buyer_id: buyerId,
-      seller_id: lot.seller_id,
+      broker_id: lot.broker_id,
       message: body.message,
       channel: body.channel,
     });
-    // Increment lot.inquiry_count fire-and-forget
     LotModel.updateOne({ _id: lot._id }, { $inc: { inquiry_count: 1 } }).catch((err) =>
       app.log.warn({ err }, 'inquiry_count increment failed'),
     );
@@ -71,23 +70,23 @@ export default async function inquiriesRoutes(app: FastifyInstance) {
     return ok(reply, { items: items.map(serialize) });
   });
 
-  // --- seller's incoming ---
+  // --- broker's incoming ---
   app.get(
     '/inquiries/received',
-    { preHandler: [app.requireRole('seller', 'broker')] },
+    { preHandler: [app.requireRole('broker')] },
     async (req, reply) => {
-      const sellerId = new Types.ObjectId(req.user.sub);
-      const items = await InquiryModel.find({ seller_id: sellerId })
+      const brokerId = new Types.ObjectId(req.user.sub);
+      const items = await InquiryModel.find({ broker_id: brokerId })
         .sort({ created_at: -1 })
         .limit(100);
       return ok(reply, { items: items.map(serialize) });
     },
   );
 
-  // --- status update ---
+  // --- status update (broker side) ---
   app.patch<{ Params: { id: string } }>(
     '/inquiries/:id/status',
-    { preHandler: [app.requireRole('seller', 'broker')] },
+    { preHandler: [app.requireRole('broker')] },
     async (req, reply) => {
       if (!Types.ObjectId.isValid(req.params.id)) {
         return fail(reply, 400, 'invalid_id', 'invalid inquiry id');
@@ -95,7 +94,7 @@ export default async function inquiriesRoutes(app: FastifyInstance) {
       const body = parseOrThrow(UpdateInquiryStatusInputSchema, req.body);
       const inquiry = await InquiryModel.findById(req.params.id);
       if (!inquiry) return fail(reply, 404, 'not_found', 'inquiry not found');
-      if (String(inquiry.seller_id) !== req.user.sub) {
+      if (String(inquiry.broker_id) !== req.user.sub) {
         return fail(reply, 403, 'forbidden', 'not your inquiry');
       }
       inquiry.status = body.status;
