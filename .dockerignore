@@ -1,0 +1,38 @@
+# deps + build outputs
+**/node_modules
+**/dist
+**/build
+**/.next
+**/.turbo
+**/*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+
+# git + ci
+.git
+.github
+.husky
+
+# editors
+.vscode
+.idea
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# tests + coverage
+coverage
+.nyc_output
+
+# docker self
+Dockerfile*
+.dockerignore
+fly.toml
+README.md
+DECISIONS.md

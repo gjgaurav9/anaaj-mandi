@@ -1,0 +1,38 @@
+# Fly.io app config for the Anaaj Mandi API.
+# Deploy from the monorepo root: `flyctl deploy`.
+# Web is hosted separately on Vercel.
+
+app = "anaaj-api"
+primary_region = "bom" # Mumbai — closest to Indore brokers
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  API_HOST = "0.0.0.0"
+  API_PORT = "4000"
+  JWT_COOKIE_NAME = "am_session"
+  JWT_TTL_DAYS = "30"
+  CLOUDINARY_UPLOAD_FOLDER = "anaaj-mandi/lots"
+  # Keep dev OTP bypass until real Twilio Verify is wired.
+  # Override via `flyctl secrets set OTP_DEV_BYPASS=false` when going live.
+  OTP_DEV_BYPASS = "true"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  cpus = 1
