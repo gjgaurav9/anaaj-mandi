@@ -9,8 +9,14 @@
 html,
 body {
   height: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  @apply bg-wheat-50 text-neutral-900 antialiased;
+  @apply bg-neutral-100 text-neutral-900 antialiased;
+}
+
+/* Mobile-app frame: the centered column that holds everything. */
+.app-shell {
+  @apply mx-auto min-h-dvh w-full max-w-md bg-white shadow-xl shadow-neutral-200/40;
 }

@@ -5,7 +5,7 @@ export interface MeUser {
   _id: string;
   phone: string;
   name: string | null;
-  role: 'seller' | 'broker' | 'buyer' | 'admin';
+  role: 'broker' | 'buyer' | 'admin';
   kyc: { status: 'pending' | 'verified' | 'rejected' };
   location: unknown;
   business_name: string | null;
