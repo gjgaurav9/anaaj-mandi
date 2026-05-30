@@ -39,3 +39,4 @@ Thumbs.db
 *.seed
 *.pid.lock
 .cache/
+.vercel
