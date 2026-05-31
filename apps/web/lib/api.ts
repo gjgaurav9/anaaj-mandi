@@ -61,7 +61,8 @@ export interface LotListItem {
   _id: string;
   broker_id: string;
   seller: EmbeddedSeller;
-  variety: 'lokwan' | 'sharbati' | 'sehore' | 'mp_sihore' | 'other';
+  grain: string;
+  variety: string;
   quantity_quintals: number;
   price_per_quintal: number;
   photos: string[];

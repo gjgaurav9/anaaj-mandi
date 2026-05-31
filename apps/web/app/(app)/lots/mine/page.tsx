@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { Badge, Button, Card, CardBody } from '@anaaj/ui';
 import { apiFetch, type LotListItem } from '@/lib/api';
-import { formatQuintals, formatRupees, formatVariety } from '@/lib/format';
+import { formatGrain, formatQuintals, formatRupees, formatVariety, grainEmoji } from '@/lib/format';
 import { getMe } from '@/lib/me';
 
 interface MineResponse {
@@ -85,7 +85,10 @@ export default async function MyLotsPage({ searchParams }: MineLotsPageProps) {
                 <CardBody className="flex-1 space-y-1 py-3 pr-3 pl-0">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-xs font-medium text-wheat-600">
-                      {formatVariety(lot.variety)}
+                      <span className="mr-1" aria-hidden>
+                        {grainEmoji(lot.grain)}
+                      </span>
+                      {formatGrain(lot.grain)} · {formatVariety(lot.variety)}
                     </span>
                     <Badge tone={STATUS_TONE[lot.status] ?? 'neutral'}>{lot.status}</Badge>
                   </div>

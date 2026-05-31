@@ -9,7 +9,7 @@ import {
   PincodeSchema,
   QuintalSchema,
   VarietySchema,
-} from './common.js';
+} from './common';
 
 export const LotStatusSchema = z.enum(['draft', 'active', 'reserved', 'sold', 'expired']);
 export type LotStatus = z.infer<typeof LotStatusSchema>;
@@ -83,6 +83,7 @@ export type UpdateLotInput = z.infer<typeof UpdateLotInputSchema>;
 
 /** GET /lots query string — filters + pagination. */
 export const ListLotsQuerySchema = z.object({
+  grain: GrainSchema.optional(),
   variety: VarietySchema.optional(),
   min_qty: z.coerce.number().positive().optional(),
   max_qty: z.coerce.number().positive().optional(),

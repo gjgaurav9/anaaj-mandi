@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GrainSchema, MandiSchema, ObjectIdSchema, PaiseSchema, VarietySchema } from './common.js';
+import { GrainSchema, MandiSchema, ObjectIdSchema, PaiseSchema, VarietySchema } from './common';
 
 export const PriceSourceSchema = z.enum(['agmarknet', 'manual']);
 export type PriceSource = z.infer<typeof PriceSourceSchema>;

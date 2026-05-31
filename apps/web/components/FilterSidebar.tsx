@@ -3,30 +3,27 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@anaaj/ui';
-
-const VARIETIES = [
-  { value: '', label: 'All varieties' },
-  { value: 'lokwan', label: 'Lokwan' },
-  { value: 'sharbati', label: 'Sharbati' },
-  { value: 'sehore', label: 'Sehore' },
-  { value: 'mp_sihore', label: 'MP Sihore' },
-];
+import { GRAIN_VARIETY_SUGGESTIONS, type Grain } from '@anaaj/types';
 
 export function FilterSidebar() {
   const router = useRouter();
   const params = useSearchParams();
+  const grain = (params.get('grain') ?? '') as Grain | '';
   const [variety, setVariety] = useState(params.get('variety') ?? '');
   const [minQty, setMinQty] = useState(params.get('min_qty') ?? '');
   const [maxQty, setMaxQty] = useState(params.get('max_qty') ?? '');
   const [minPrice, setMinPrice] = useState(params.get('min_price') ?? '');
   const [maxPrice, setMaxPrice] = useState(params.get('max_price') ?? '');
 
+  const varietyOptions =
+    grain && grain in GRAIN_VARIETY_SUGGESTIONS ? GRAIN_VARIETY_SUGGESTIONS[grain as Grain] : [];
+
   function apply() {
     const next = new URLSearchParams();
-    if (variety) next.set('variety', variety);
+    if (grain) next.set('grain', grain);
+    if (variety.trim()) next.set('variety', variety.trim());
     if (minQty) next.set('min_qty', minQty);
     if (maxQty) next.set('max_qty', maxQty);
-    // price filters are entered in ₹; convert to paise for the API
     if (minPrice) next.set('min_price', String(Number(minPrice) * 100));
     if (maxPrice) next.set('max_price', String(Number(maxPrice) * 100));
     router.push(`/browse?${next.toString()}`);
@@ -38,7 +35,7 @@ export function FilterSidebar() {
     setMaxQty('');
     setMinPrice('');
     setMaxPrice('');
-    router.push('/browse');
+    router.push(grain ? `/browse?grain=${grain}` : '/browse');
   }
 
   const input =
@@ -46,18 +43,26 @@ export function FilterSidebar() {
   const label = 'block text-xs font-medium text-neutral-700 mb-1';
 
   return (
-    <aside className="sticky top-20 space-y-4 rounded-xl border border-neutral-200 bg-white p-4">
+    <aside className="md:sticky md:top-20 space-y-4 rounded-xl border border-neutral-200 bg-white p-4">
       <h3 className="text-sm font-semibold">Filters</h3>
 
       <div>
         <label className={label}>Variety</label>
-        <select className={input} value={variety} onChange={(e) => setVariety(e.target.value)}>
-          {VARIETIES.map((v) => (
-            <option key={v.value} value={v.value}>
-              {v.label}
-            </option>
-          ))}
-        </select>
+        <input
+          className={input}
+          value={variety}
+          onChange={(e) => setVariety(e.target.value)}
+          list="variety-suggestions"
+          placeholder={grain ? 'Pick or type a variety' : 'Pick a grain first'}
+          disabled={!grain}
+        />
+        {varietyOptions.length > 0 && (
+          <datalist id="variety-suggestions">
+            {varietyOptions.map((v) => (
+              <option key={v} value={v} />
+            ))}
+          </datalist>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -101,7 +106,7 @@ export function FilterSidebar() {
             inputMode="numeric"
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
-            placeholder="3500"
+            placeholder="6500"
           />
         </div>
       </div>

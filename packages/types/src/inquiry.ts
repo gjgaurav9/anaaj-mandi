@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ObjectIdSchema } from './common.js';
+import { ObjectIdSchema } from './common';
 
 export const InquiryStatusSchema = z.enum(['sent', 'viewed', 'replied', 'closed']);
 export type InquiryStatus = z.infer<typeof InquiryStatusSchema>;

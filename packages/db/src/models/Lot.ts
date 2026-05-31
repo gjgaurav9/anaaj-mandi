@@ -1,7 +1,32 @@
 import { Schema, model, type HydratedDocument, type Model, type Types } from 'mongoose';
 import type { IGeoPoint } from './User.js';
 
-export type Variety = 'lokwan' | 'sharbati' | 'sehore' | 'mp_sihore' | 'other';
+/** Grains traded through Indore-region mandis. */
+export type Grain =
+  | 'wheat'
+  | 'soybean'
+  | 'chana'
+  | 'maize'
+  | 'mustard'
+  | 'jowar'
+  | 'bajra'
+  | 'rice'
+  | 'other';
+
+export const GRAINS: Grain[] = [
+  'wheat',
+  'soybean',
+  'chana',
+  'maize',
+  'mustard',
+  'jowar',
+  'bajra',
+  'rice',
+  'other',
+];
+
+/** Variety is free-form per grain. Frontend offers suggestions; brokers may type custom. */
+export type Variety = string;
 export type LotStatus = 'draft' | 'active' | 'reserved' | 'sold' | 'expired';
 
 export interface ILotQuality {
@@ -28,7 +53,7 @@ export interface ILotPickupLocation {
 export interface ILot {
   broker_id: Types.ObjectId;
   seller: IEmbeddedSeller;
-  grain: 'wheat';
+  grain: Grain;
   variety: Variety;
   quantity_quintals: number;
   /** integer paise */
@@ -91,12 +116,8 @@ const lotSchema = new Schema<ILot>(
   {
     broker_id: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     seller: { type: embeddedSellerSchema, required: true },
-    grain: { type: String, enum: ['wheat'], required: true, default: 'wheat' },
-    variety: {
-      type: String,
-      enum: ['lokwan', 'sharbati', 'sehore', 'mp_sihore', 'other'],
-      required: true,
-    },
+    grain: { type: String, enum: GRAINS, required: true, default: 'wheat', index: true },
+    variety: { type: String, required: true, trim: true, minlength: 1, maxlength: 50 },
     quantity_quintals: { type: Number, required: true, min: 10 },
     price_per_quintal: { type: Number, required: true, min: 0 },
     quality: { type: qualitySchema, required: true },
@@ -127,6 +148,7 @@ const lotSchema = new Schema<ILot>(
 );
 
 lotSchema.index({ 'pickup_location.geo': '2dsphere' });
+lotSchema.index({ grain: 1, variety: 1, status: 1 });
 lotSchema.index({ variety: 'text', 'pickup_location.city': 'text', 'seller.name': 'text' });
 
 export type LotDoc = HydratedDocument<ILot> & { _id: Types.ObjectId };

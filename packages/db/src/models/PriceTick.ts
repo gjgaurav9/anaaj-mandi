@@ -1,5 +1,5 @@
 import { Schema, model, type HydratedDocument, type Model, type Types } from 'mongoose';
-import type { Variety } from './Lot.js';
+import { GRAINS, type Grain, type Variety } from './Lot.js';
 
 export type Mandi =
   | 'indore_chhawni'
@@ -14,7 +14,7 @@ export type Mandi =
 export type PriceSource = 'agmarknet' | 'manual';
 
 export interface IPriceTick {
-  grain: 'wheat';
+  grain: Grain;
   mandi: Mandi;
   variety: Variety;
   /** integer paise */
@@ -27,7 +27,7 @@ export interface IPriceTick {
 
 const priceTickSchema = new Schema<IPriceTick>(
   {
-    grain: { type: String, enum: ['wheat'], required: true, default: 'wheat' },
+    grain: { type: String, enum: GRAINS, required: true, default: 'wheat', index: true },
     mandi: {
       type: String,
       enum: [
@@ -42,11 +42,7 @@ const priceTickSchema = new Schema<IPriceTick>(
       ],
       required: true,
     },
-    variety: {
-      type: String,
-      enum: ['lokwan', 'sharbati', 'sehore', 'mp_sihore', 'other'],
-      required: true,
-    },
+    variety: { type: String, required: true, trim: true, minlength: 1, maxlength: 50 },
     price_min: { type: Number, required: true, min: 0 },
     price_max: { type: Number, required: true, min: 0 },
     price_modal: { type: Number, required: true, min: 0 },
@@ -59,7 +55,9 @@ const priceTickSchema = new Schema<IPriceTick>(
   },
 );
 
-priceTickSchema.index({ mandi: 1, variety: 1, date: 1 }, { unique: true });
+// Uniqueness compound now includes grain so wheat-Indore-lokwan-today
+// and soybean-Indore-JS9560-today can coexist on the same row.
+priceTickSchema.index({ grain: 1, mandi: 1, variety: 1, date: 1 }, { unique: true });
 
 export type PriceTickDoc = HydratedDocument<IPriceTick> & { _id: Types.ObjectId };
 

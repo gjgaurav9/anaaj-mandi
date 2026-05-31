@@ -31,7 +31,7 @@ function serializeLot(
       phone: opts.revealSellerPhone ? l.seller.phone : null,
       village: l.seller.village ?? null,
     },
-    grain: l.grain,
+    grain: l.grain as string,
     variety: l.variety,
     quantity_quintals: l.quantity_quintals,
     price_per_quintal: l.price_per_quintal,
@@ -67,6 +67,7 @@ export default async function lotsRoutes(app: FastifyInstance) {
   app.get('/lots', async (req, reply) => {
     const q = parseOrThrow(ListLotsQuerySchema, req.query ?? {});
     const filter: FilterQuery<ILot> = { status: q.status ?? 'active' };
+    if (q.grain) filter.grain = q.grain;
     if (q.variety) filter.variety = q.variety;
     if (q.min_qty || q.max_qty) {
       filter.quantity_quintals = {};

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Badge, Card, CardBody } from '@anaaj/ui';
 import type { LotListItem } from '@/lib/api';
-import { formatQuintals, formatRupees, formatVariety } from '@/lib/format';
+import { formatGrain, formatQuintals, formatRupees, formatVariety, grainEmoji } from '@/lib/format';
 
 export function LotCard({ lot }: { lot: LotListItem }) {
   const photo = lot.photos[0];
@@ -13,16 +13,21 @@ export function LotCard({ lot }: { lot: LotListItem }) {
           {photo ? (
             <Image
               src={photo}
-              alt={`${formatVariety(lot.variety)} wheat`}
+              alt={`${formatGrain(lot.grain)} — ${formatVariety(lot.variety)}`}
               fill
-              sizes="(min-width: 768px) 33vw, 100vw"
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 100vw"
               className="object-cover"
             />
           ) : (
             <div className="grid h-full place-items-center text-wheat-600">No photo</div>
           )}
-          <div className="absolute left-2 top-2">
-            <Badge tone="wheat">{formatVariety(lot.variety)}</Badge>
+          <div className="absolute left-2 top-2 flex items-center gap-1">
+            <Badge tone="wheat">
+              <span className="mr-1" aria-hidden>
+                {grainEmoji(lot.grain)}
+              </span>
+              {formatGrain(lot.grain)}
+            </Badge>
           </div>
         </div>
         <CardBody className="space-y-1.5">
@@ -30,7 +35,10 @@ export function LotCard({ lot }: { lot: LotListItem }) {
             <span className="text-lg font-semibold">{formatRupees(lot.price_per_quintal)}</span>
             <span className="text-xs text-neutral-500">per quintal</span>
           </div>
-          <div className="text-sm text-neutral-700">{formatQuintals(lot.quantity_quintals)}</div>
+          <div className="text-sm text-neutral-700">
+            <span className="font-medium">{formatVariety(lot.variety)}</span> ·{' '}
+            {formatQuintals(lot.quantity_quintals)}
+          </div>
           <div className="flex items-center justify-between text-xs text-neutral-500">
             <span>{lot.pickup_location.city}</span>
             <span>{lot.inquiry_count} inquiries</span>

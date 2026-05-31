@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ObjectIdSchema, PaiseSchema, PhoneSchema, QuintalSchema } from './common.js';
+import { ObjectIdSchema, PaiseSchema, PhoneSchema, QuintalSchema } from './common';
 
 export const TransactionStatusSchema = z.enum([
   'agreed',

@@ -1,11 +1,5 @@
 import { z } from 'zod';
-import {
-  GeoPointSchema,
-  ObjectIdSchema,
-  PhoneSchema,
-  PincodeSchema,
-  RoleSchema,
-} from './common.js';
+import { GeoPointSchema, ObjectIdSchema, PhoneSchema, PincodeSchema, RoleSchema } from './common';
 
 export const KycStatusSchema = z.enum(['pending', 'verified', 'rejected']);
 export type KycStatus = z.infer<typeof KycStatusSchema>;

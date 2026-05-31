@@ -11,11 +11,13 @@ export {
 } from './models/User.js';
 export {
   LotModel,
+  GRAINS,
   type LotDoc,
   type ILot,
   type ILotQuality,
   type ILotPickupLocation,
   type IEmbeddedSeller,
+  type Grain,
   type Variety,
   type LotStatus,
 } from './models/Lot.js';

@@ -6,29 +6,38 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@anaaj/ui';
+import {
+  GRAIN_EMOJI,
+  GRAIN_LABELS,
+  GRAIN_VARIETY_SUGGESTIONS,
+  GrainSchema,
+  type Grain,
+} from '@anaaj/types';
 import { clientFetch, ClientApiError } from '@/lib/clientApi';
 
 // Indore center, used when broker doesn't specify a geo point.
 const INDORE_GEO: [number, number] = [75.8577, 22.7196];
 
-const VARIETIES = [
-  { value: 'lokwan', label: 'Lokwan' },
-  { value: 'sharbati', label: 'Sharbati' },
-  { value: 'sehore', label: 'Sehore' },
-  { value: 'mp_sihore', label: 'MP Sihore' },
-] as const;
+const GRAIN_OPTIONS = GrainSchema.options;
 
-const VARIETY_PHOTO_BG: Record<string, { bg: string; fg: string }> = {
-  lokwan: { bg: 'd4a017', fg: 'ffffff' },
-  sharbati: { bg: 'a87a0c', fg: 'ffffff' },
-  sehore: { bg: 'e6b85b', fg: '4b3a0d' },
-  mp_sihore: { bg: 'fff8c4', fg: '4b3a0d' },
+const GRAIN_PALETTE: Record<Grain, { bg: string; fg: string }> = {
+  wheat: { bg: 'd4a017', fg: 'ffffff' },
+  soybean: { bg: '6b8e23', fg: 'ffffff' },
+  chana: { bg: '8b6f47', fg: 'ffffff' },
+  maize: { bg: 'daa520', fg: 'ffffff' },
+  mustard: { bg: 'f4c430', fg: '4b3a0d' },
+  jowar: { bg: 'b8a361', fg: 'ffffff' },
+  bajra: { bg: '8b7355', fg: 'ffffff' },
+  rice: { bg: 'e8d7b3', fg: '4b3a0d' },
+  other: { bg: '6b7280', fg: 'ffffff' },
 };
 
-function defaultPhotoFor(variety: string): string {
-  const palette = VARIETY_PHOTO_BG[variety] ?? VARIETY_PHOTO_BG.lokwan!;
-  const label = variety.replace('_', '+');
-  return `https://placehold.co/800x600/${palette.bg}/${palette.fg}/png?text=${label}+wheat`;
+function defaultPhotoFor(grain: Grain, variety: string): string {
+  const palette = GRAIN_PALETTE[grain];
+  const label = encodeURIComponent(
+    (variety || GRAIN_LABELS[grain]).replace(/[^A-Za-z0-9 ]/g, '').replace(/\s+/g, '+'),
+  );
+  return `https://placehold.co/800x600/${palette.bg}/${palette.fg}/png?text=${label}`;
 }
 
 const FormSchema = z.object({
@@ -36,7 +45,8 @@ const FormSchema = z.object({
   seller_phone: z.string().regex(/^[6-9]\d{9}$/, '10-digit Indian mobile starting 6-9'),
   seller_village: z.string().max(80).optional(),
 
-  variety: z.enum(['lokwan', 'sharbati', 'sehore', 'mp_sihore']),
+  grain: GrainSchema,
+  variety: z.string().trim().min(1, 'Variety is required').max(50),
   quantity_quintals: z.coerce.number().min(10, 'Min 10 quintals'),
   /** UI accepts ₹/qtl; converted to paise before POST. */
   price_per_quintal_rupees: z.coerce.number().positive(),
@@ -71,7 +81,8 @@ export function CreateLotForm() {
   } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      variety: 'lokwan',
+      grain: 'wheat',
+      variety: '',
       available_from: new Date().toISOString().slice(0, 10),
       city: 'Indore',
       district: 'Indore',
@@ -79,7 +90,9 @@ export function CreateLotForm() {
     },
   });
 
+  const grain = watch('grain');
   const variety = watch('variety');
+  const varietyOptions = GRAIN_VARIETY_SUGGESTIONS[grain] ?? [];
 
   async function onSubmit(values: FormValues, intendedStatus: 'draft' | 'active') {
     setSubmitError(null);
@@ -89,11 +102,9 @@ export function CreateLotForm() {
         .split(/[\n,]/)
         .map((s) => s.trim())
         .filter(Boolean);
-      // If publishing active without explicit photos, attach the variety placeholder
-      // so the API's "active needs ≥1 photo" rule is satisfied.
       const finalPhotos =
         intendedStatus === 'active' && photos.length === 0
-          ? [defaultPhotoFor(values.variety)]
+          ? [defaultPhotoFor(values.grain, values.variety)]
           : photos;
 
       const body = {
@@ -102,7 +113,8 @@ export function CreateLotForm() {
           phone: `+91${values.seller_phone}`,
           village: values.seller_village || undefined,
         },
-        variety: values.variety,
+        grain: values.grain,
+        variety: values.variety.trim(),
         quantity_quintals: values.quantity_quintals,
         price_per_quintal: Math.round(values.price_per_quintal_rupees * 100),
         quality: {
@@ -168,14 +180,32 @@ export function CreateLotForm() {
 
       <Section title="Lot details">
         <div>
-          <label className={label}>Variety</label>
-          <select {...register('variety')} className={input}>
-            {VARIETIES.map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label}
+          <label className={label}>Grain</label>
+          <select {...register('grain')} className={input}>
+            {GRAIN_OPTIONS.map((g) => (
+              <option key={g} value={g}>
+                {GRAIN_EMOJI[g]} {GRAIN_LABELS[g]}
               </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className={label}>Variety</label>
+          <input
+            {...register('variety')}
+            className={input}
+            list="variety-list"
+            placeholder={varietyOptions[0] ?? 'Type the variety'}
+            autoComplete="off"
+          />
+          {varietyOptions.length > 0 && (
+            <datalist id="variety-list">
+              {varietyOptions.map((v) => (
+                <option key={v} value={v} />
+              ))}
+            </datalist>
+          )}
+          {errors.variety && <p className={err}>{errors.variety.message}</p>}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -269,8 +299,10 @@ export function CreateLotForm() {
           placeholder="https://res.cloudinary.com/..."
         />
         <p className="text-xs text-neutral-500">
-          Preview placeholder for <span className="font-medium text-wheat-600">{variety}</span>:{' '}
-          <span className="break-all font-mono text-[10px]">{defaultPhotoFor(variety)}</span>
+          Preview placeholder for{' '}
+          <span className="font-medium text-wheat-600">
+            {GRAIN_LABELS[grain]} · {variety || '(variety)'}
+          </span>
         </p>
       </Section>
 
@@ -278,7 +310,7 @@ export function CreateLotForm() {
         <p className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{submitError}</p>
       )}
 
-      <div className="sticky bottom-16 -mx-4 flex gap-2 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur">
+      <div className="sticky bottom-16 -mx-4 flex gap-2 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur md:bottom-0">
         <Button
           type="button"
           variant="ghost"

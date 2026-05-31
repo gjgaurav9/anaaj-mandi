@@ -37,10 +37,60 @@ export type GeoPoint = z.infer<typeof GeoPointSchema>;
 export const RoleSchema = z.enum(['broker', 'buyer', 'admin']);
 export type Role = z.infer<typeof RoleSchema>;
 
-export const GrainSchema = z.literal('wheat'); // v1 is wheat-only; schema is extensible later
+/** Grains traded through Indore-region mandis. Order matters — used for landing tile order. */
+export const GrainSchema = z.enum([
+  'wheat',
+  'soybean',
+  'chana',
+  'maize',
+  'mustard',
+  'jowar',
+  'bajra',
+  'rice',
+  'other',
+]);
 export type Grain = z.infer<typeof GrainSchema>;
 
-export const VarietySchema = z.enum(['lokwan', 'sharbati', 'sehore', 'mp_sihore', 'other']);
+export const GRAIN_LABELS: Record<Grain, string> = {
+  wheat: 'Wheat (Gehu)',
+  soybean: 'Soybean (Soya)',
+  chana: 'Chana',
+  maize: 'Maize (Makka)',
+  mustard: 'Mustard (Sarson)',
+  jowar: 'Jowar',
+  bajra: 'Bajra',
+  rice: 'Rice (Chawal)',
+  other: 'Other',
+};
+
+/** Visual icon shown on grain tiles + lot cards. */
+export const GRAIN_EMOJI: Record<Grain, string> = {
+  wheat: '🌾',
+  soybean: '🫘',
+  chana: '🫛',
+  maize: '🌽',
+  mustard: '🌼',
+  jowar: '🟡',
+  bajra: '🟤',
+  rice: '🍚',
+  other: '🌱',
+};
+
+/** Common varieties per grain, used as datalist suggestions in the create-lot form. */
+export const GRAIN_VARIETY_SUGGESTIONS: Record<Grain, string[]> = {
+  wheat: ['Lokwan', 'Sharbati', 'Sehore', 'MP Sihore'],
+  soybean: ['JS-9560', 'NRC-86', 'JS-2034', 'JS-93-05', 'Local'],
+  chana: ['Desi', 'Kabuli', 'Vishal', 'JG-11'],
+  maize: ['Yellow', 'White', 'Hybrid', 'Local'],
+  mustard: ['Black (Kali Sarson)', 'Yellow (Pili Sarson)', 'RH-749', 'Pusa Bold'],
+  jowar: ['White Jowar', 'Yellow Jowar', 'Hybrid'],
+  bajra: ['Hybrid', 'Local', 'Composite'],
+  rice: ['Basmati', 'Sona Masuri', 'IR-64', 'Non-Basmati'],
+  other: [],
+};
+
+/** Variety on a lot or price tick — free-form, just trimmed and length-bounded. */
+export const VarietySchema = z.string().trim().min(1, 'variety is required').max(50);
 export type Variety = z.infer<typeof VarietySchema>;
 
 /** Indore-area mandis (plus 'other'). */

@@ -3,7 +3,14 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { Badge, Card, CardBody } from '@anaaj/ui';
 import { apiFetch, ApiError, type LotDetail } from '@/lib/api';
-import { formatDate, formatQuintals, formatRupees, formatVariety } from '@/lib/format';
+import {
+  formatDate,
+  formatGrain,
+  formatQuintals,
+  formatRupees,
+  formatVariety,
+  grainEmoji,
+} from '@/lib/format';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { getMe } from '@/lib/me';
 
@@ -40,8 +47,14 @@ export default async function LotDetailPage({ params }: LotPageProps) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-4 md:py-8">
       <nav className="text-xs text-neutral-500">
-        <span>Browse</span> /{' '}
-        <span className="text-neutral-700">{formatVariety(lot.variety)} wheat</span>
+        <a href="/browse" className="hover:underline">
+          Browse
+        </a>{' '}
+        /{' '}
+        <a href={`/browse?grain=${lot.grain}`} className="hover:underline">
+          {formatGrain(lot.grain)}
+        </a>{' '}
+        / <span className="text-neutral-700">{formatVariety(lot.variety)}</span>
       </nav>
 
       {/* Two-column on desktop, stacked on mobile */}
@@ -84,8 +97,14 @@ export default async function LotDetailPage({ params }: LotPageProps) {
 
         {/* Details column */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Badge tone="wheat">{formatVariety(lot.variety)}</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="wheat">
+              <span className="mr-1" aria-hidden>
+                {grainEmoji(lot.grain)}
+              </span>
+              {formatGrain(lot.grain)}
+            </Badge>
+            <Badge tone="neutral">{formatVariety(lot.variety)}</Badge>
             <Badge tone={lot.status === 'active' ? 'success' : 'neutral'}>{lot.status}</Badge>
           </div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">

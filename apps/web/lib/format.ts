@@ -1,3 +1,5 @@
+import { GRAIN_EMOJI, GRAIN_LABELS, type Grain } from '@anaaj/types';
+
 /**
  * All money is stored as integer paise on the server. UI display divides by
  * 100 and uses Indian comma grouping (₹1,23,456 not ₹123,456).
@@ -31,16 +33,17 @@ export function formatDate(iso: string): string {
   });
 }
 
-const VARIETY_LABEL: Record<string, string> = {
-  lokwan: 'Lokwan',
-  sharbati: 'Sharbati',
-  sehore: 'Sehore',
-  mp_sihore: 'MP Sihore',
-  other: 'Other',
-};
-
+/** Variety is stored as the broker's display text; just return it. */
 export function formatVariety(v: string): string {
-  return VARIETY_LABEL[v] ?? v;
+  return v;
+}
+
+export function formatGrain(g: string): string {
+  return GRAIN_LABELS[g as Grain] ?? g;
+}
+
+export function grainEmoji(g: string): string {
+  return GRAIN_EMOJI[g as Grain] ?? '🌱';
 }
 
 const MANDI_LABEL: Record<string, string> = {
