@@ -84,9 +84,9 @@ export function CreateLotForm() {
       grain: 'wheat',
       variety: '',
       available_from: new Date().toISOString().slice(0, 10),
-      city: 'Indore',
-      district: 'Indore',
-      pincode: '452001',
+      city: '',
+      district: '',
+      pincode: '',
     },
   });
 

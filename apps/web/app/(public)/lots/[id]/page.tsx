@@ -65,7 +65,7 @@ export default async function LotDetailPage({ params }: LotPageProps) {
             {lot.photos[0] ? (
               <Image
                 src={lot.photos[0]}
-                alt={`${formatVariety(lot.variety)} wheat`}
+                alt={`${formatGrain(lot.grain)} — ${formatVariety(lot.variety)}`}
                 fill
                 sizes="(min-width: 768px) 60vw, 100vw"
                 priority
@@ -178,6 +178,7 @@ export default async function LotDetailPage({ params }: LotPageProps) {
               lotId={lot._id}
               authed={authed}
               sellerPhone={brokerPhone}
+              grain={lot.grain}
               variety={lot.variety}
               quantityQuintals={lot.quantity_quintals}
               pricePerQuintalPaise={lot.price_per_quintal}
@@ -186,6 +187,7 @@ export default async function LotDetailPage({ params }: LotPageProps) {
             <WhatsAppButton
               authed={false}
               sellerPhone=""
+              grain={lot.grain}
               variety={lot.variety}
               quantityQuintals={lot.quantity_quintals}
               pricePerQuintalPaise={lot.price_per_quintal}

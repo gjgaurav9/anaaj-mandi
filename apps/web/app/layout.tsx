@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Anaaj Mandi — Indore grain marketplace',
-  description: 'Brokers list, buyers connect — Indore ka grain trade WhatsApp pe.',
+  title: "Anaaj Mandi — India's grain marketplace",
+  description: 'Brokers list, buyers connect — India bhar ka grain trade WhatsApp pe.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

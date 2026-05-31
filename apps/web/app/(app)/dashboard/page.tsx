@@ -5,7 +5,7 @@ import { getMe } from '@/lib/me';
 
 const ROLE_HEADLINE: Record<string, string> = {
   broker: 'Apne farmers ki listings manage karo',
-  buyer: 'Sahi rate ka wheat dhundo',
+  buyer: 'Sahi rate ka grain dhundo',
   admin: 'KYC + listings moderate karo',
 };
 
@@ -16,7 +16,7 @@ const ROLE_ACTIONS: Record<string, Array<{ href: string; label: string; primary?
     { href: '/inquiries', label: 'Buyer inquiries' },
   ],
   buyer: [
-    { href: '/browse', label: 'Wheat lots browse karo', primary: true },
+    { href: '/browse', label: 'Grain lots browse karo', primary: true },
     { href: '/inquiries', label: 'Meri inquiries' },
   ],
   admin: [

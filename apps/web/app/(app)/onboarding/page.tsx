@@ -35,8 +35,8 @@ export default async function OnboardingPage() {
             <h2 className="font-semibold">Jump in</h2>
             <p className="text-sm text-neutral-600">
               {me.role === 'buyer'
-                ? 'Start browsing today’s wheat lots and connect on WhatsApp.'
-                : 'List your first wheat lot — yeh sirf 2 minutes ka kaam hai.'}
+                ? 'Start browsing today’s grain lots and connect on WhatsApp.'
+                : 'List your first grain lot — yeh sirf 2 minutes ka kaam hai.'}
             </p>
             <Link href={me.role === 'buyer' ? '/browse' : '/lots/new'}>
               <Button size="sm">{me.role === 'buyer' ? 'Browse lots' : 'Create a lot'}</Button>
