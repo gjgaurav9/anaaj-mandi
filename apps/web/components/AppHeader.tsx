@@ -31,7 +31,7 @@ export function AppHeader({ me }: AppHeaderProps) {
           <span className="leading-tight">
             <span className="block">Anaaj Mandi</span>
             <span className="hidden text-[11px] font-normal text-neutral-500 md:block">
-              Indore wheat marketplace
+              Indore grain marketplace
             </span>
           </span>
         </Link>
