@@ -63,10 +63,10 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">
           <div className="max-w-2xl">
             <span className="inline-flex items-center rounded-full bg-wheat-100 px-3 py-1 text-xs font-medium text-wheat-600">
-              Indore · Madhya Pradesh
+              All India · Mandi to mill
             </span>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Mandi ka <span className="text-wheat-600">sabse seedha</span> grain marketplace.
+              India ka <span className="text-wheat-600">sabse seedha</span> grain marketplace.
             </h1>
             <p className="mt-3 text-base text-neutral-700 md:text-lg">
               Brokers apne farmers ki listings upload karte hain, buyers WhatsApp pe seedha connect
