@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
-import { I18nProvider, LOCALE_COOKIE, asLocale } from '@/lib/i18n';
+import { I18nProvider } from '@/lib/i18n';
+import { LOCALE_COOKIE, asLocale } from '@/lib/i18n/dictionaries';
 import './globals.css';
 
 export const metadata: Metadata = {

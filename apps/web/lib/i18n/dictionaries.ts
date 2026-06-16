@@ -17,6 +17,15 @@ export const LOCALE_LABELS: Record<Locale, string> = {
 
 export const DEFAULT_LOCALE: Locale = 'hi';
 
+/** Cookie that persists the chosen locale across requests. */
+export const LOCALE_COOKIE = 'am_lang';
+
+/** Narrow an arbitrary string to a supported Locale, defaulting otherwise.
+ *  Server-safe (no React) so Server Components can call it directly. */
+export function asLocale(value: string | undefined | null): Locale {
+  return LOCALES.includes(value as Locale) ? (value as Locale) : DEFAULT_LOCALE;
+}
+
 type Dict = Record<string, string>;
 
 const en: Dict = {
@@ -277,3 +286,15 @@ const mr: Dict = {
 };
 
 export const DICTIONARIES: Record<Locale, Dict> = { en, hi, mr };
+
+/** Translate `key` for `locale`, with `{var}` interpolation and en fallback.
+ *  Pure / server-safe. */
+export function translate(
+  locale: Locale,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
+  const raw = DICTIONARIES[locale]?.[key] ?? DICTIONARIES.en[key] ?? key;
+  if (!vars) return raw;
+  return raw.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
+}

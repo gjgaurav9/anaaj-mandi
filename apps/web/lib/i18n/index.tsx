@@ -1,27 +1,21 @@
 'use client';
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
-import { DEFAULT_LOCALE, DICTIONARIES, LOCALES, type Locale } from './dictionaries';
+import { LOCALE_COOKIE, translate, type Locale } from './dictionaries';
 
-export { LOCALES, LOCALE_LABELS, DEFAULT_LOCALE, type Locale } from './dictionaries';
-
-export const LOCALE_COOKIE = 'am_lang';
-
-/** Narrow an arbitrary string to a supported Locale, defaulting otherwise. */
-export function asLocale(value: string | undefined | null): Locale {
-  return LOCALES.includes(value as Locale) ? (value as Locale) : DEFAULT_LOCALE;
-}
-
-/** Translate `key` for `locale`, with `{var}` interpolation and en fallback. */
-export function translate(
-  locale: Locale,
-  key: string,
-  vars?: Record<string, string | number>,
-): string {
-  const raw = DICTIONARIES[locale]?.[key] ?? DICTIONARIES.en[key] ?? key;
-  if (!vars) return raw;
-  return raw.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
-}
+// Re-export the server-safe pieces for client consumers' convenience.
+// NOTE: Server Components must import asLocale/LOCALE_COOKIE/translate from
+// './dictionaries' directly — importing them through this 'use client' module
+// turns them into client references (TypeError: c is not a function).
+export {
+  LOCALES,
+  LOCALE_LABELS,
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE,
+  asLocale,
+  translate,
+  type Locale,
+} from './dictionaries';
 
 interface I18nValue {
   locale: Locale;
