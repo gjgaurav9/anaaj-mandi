@@ -1,13 +1,31 @@
 import { headers } from 'next/headers';
 import { apiFetch, ApiError } from './api';
 
+export interface MeLocation {
+  city: string;
+  district: string;
+  state: string;
+  pincode: string;
+  geo?: { type: 'Point'; coordinates: [number, number] };
+}
+
 export interface MeUser {
   _id: string;
   phone: string;
+  whatsapp: string | null;
   name: string | null;
   role: 'broker' | 'buyer' | 'admin';
-  kyc: { status: 'pending' | 'verified' | 'rejected' };
-  location: unknown;
+  kyc: {
+    status: 'pending' | 'verified' | 'rejected';
+    gst?: string;
+    pan_last4?: string;
+    gst_doc_url?: string;
+    submitted_at?: string;
+    verified_at?: string;
+    reason?: string;
+  };
+  rating: { avg: number; count: number };
+  location: MeLocation | null;
   business_name: string | null;
   broker_mandi: string | null;
   broker_years: number | null;

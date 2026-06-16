@@ -15,7 +15,11 @@ interface PublicBroker {
   _id: string;
   name: string | null;
   broker_mandi: string | null;
+  broker_years: number | null;
+  verified: boolean;
+  rating: { avg: number; count: number };
   phone?: string; // only present for authed buyers
+  whatsapp?: string | null; // broker's WhatsApp (falls back to phone), authed only
 }
 
 function serializeLot(
@@ -52,13 +56,18 @@ async function loadBroker(
   brokerId: Types.ObjectId,
   revealPhone: boolean,
 ): Promise<PublicBroker | null> {
-  const u = await UserModel.findById(brokerId).select('name broker_mandi phone');
+  const u = await UserModel.findById(brokerId).select(
+    'name broker_mandi broker_years phone whatsapp kyc.status rating',
+  );
   if (!u) return null;
   return {
     _id: String(u._id),
     name: u.name ?? null,
     broker_mandi: u.broker_mandi ?? null,
-    ...(revealPhone ? { phone: u.phone } : {}),
+    broker_years: u.broker_years ?? null,
+    verified: u.kyc?.status === 'verified',
+    rating: u.rating ?? { avg: 0, count: 0 },
+    ...(revealPhone ? { phone: u.phone, whatsapp: u.whatsapp ?? u.phone } : {}),
   };
 }
 
@@ -92,8 +101,29 @@ export default async function lotsRoutes(app: FastifyInstance) {
       LotModel.find(filter).sort({ created_at: -1 }).skip(skip).limit(q.limit),
       LotModel.countDocuments(filter),
     ]);
+
+    // Batch-load brokers for this page so cards can show trust signals
+    // (verified badge + rating) without an N+1 query or exposing phones.
+    const brokerIds = [...new Set(items.map((l) => String(l.broker_id)))];
+    const brokers = await UserModel.find({ _id: { $in: brokerIds } }).select(
+      'name broker_mandi broker_years kyc.status rating',
+    );
+    const brokerById = new Map<string, PublicBroker>(
+      brokers.map((u) => [
+        String(u._id),
+        {
+          _id: String(u._id),
+          name: u.name ?? null,
+          broker_mandi: u.broker_mandi ?? null,
+          broker_years: u.broker_years ?? null,
+          verified: u.kyc?.status === 'verified',
+          rating: u.rating ?? { avg: 0, count: 0 },
+        },
+      ]),
+    );
+
     return ok(reply, {
-      items: items.map((l) => serializeLot(l)),
+      items: items.map((l) => serializeLot(l, { broker: brokerById.get(String(l.broker_id)) })),
       pagination: {
         page: q.page,
         limit: q.limit,

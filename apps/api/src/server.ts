@@ -12,6 +12,8 @@ import lotsRoutes from './routes/lots.js';
 import inquiriesRoutes from './routes/inquiries.js';
 import pricesRoutes from './routes/prices.js';
 import transactionsRoutes from './routes/transactions.js';
+import reviewsRoutes from './routes/reviews.js';
+import supportRoutes from './routes/support.js';
 import adminRoutes from './routes/admin.js';
 
 async function build() {
@@ -50,6 +52,8 @@ async function build() {
   await app.register(inquiriesRoutes);
   await app.register(pricesRoutes);
   await app.register(transactionsRoutes);
+  await app.register(reviewsRoutes);
+  await app.register(supportRoutes);
   await app.register(adminRoutes);
 
   return app;

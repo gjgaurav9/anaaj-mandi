@@ -8,7 +8,18 @@ export interface IKyc {
   gst?: string;
   pan_last4?: string;
   aadhaar_last4?: string;
+  /** Cloudinary URL of the uploaded GST invoice / business proof. */
+  gst_doc_url?: string;
+  submitted_at?: Date;
   verified_at?: Date;
+  /** Admin note shown to the broker on rejection. */
+  reason?: string;
+}
+
+/** Aggregate of buyer reviews — denormalised onto the broker for cheap reads. */
+export interface IUserRating {
+  avg: number;
+  count: number;
 }
 
 export interface IGeoPoint {
@@ -26,9 +37,12 @@ export interface IUserLocation {
 
 export interface IUser {
   phone: string;
+  /** Separate WhatsApp number; falls back to `phone` when unset. E.164. */
+  whatsapp?: string;
   name?: string;
   role: Role;
   kyc: IKyc;
+  rating: IUserRating;
   location?: IUserLocation;
   business_name?: string;
   broker_mandi?: string;
@@ -50,7 +64,18 @@ const kycSchema = new Schema<IKyc>(
     gst: { type: String },
     pan_last4: { type: String },
     aadhaar_last4: { type: String },
+    gst_doc_url: { type: String },
+    submitted_at: { type: Date },
     verified_at: { type: Date },
+    reason: { type: String, maxlength: 280 },
+  },
+  { _id: false },
+);
+
+const ratingSchema = new Schema<IUserRating>(
+  {
+    avg: { type: Number, default: 0, min: 0, max: 5 },
+    count: { type: Number, default: 0, min: 0 },
   },
   { _id: false },
 );
@@ -88,6 +113,7 @@ const userSchema = new Schema<IUser>(
       unique: true,
       match: /^\+91[6-9]\d{9}$/,
     },
+    whatsapp: { type: String, match: /^\+91[6-9]\d{9}$/ },
     name: { type: String, maxlength: 80 },
     role: {
       type: String,
@@ -95,6 +121,7 @@ const userSchema = new Schema<IUser>(
       required: true,
     },
     kyc: { type: kycSchema, default: () => ({ status: 'pending' }) },
+    rating: { type: ratingSchema, default: () => ({ avg: 0, count: 0 }) },
     location: { type: userLocationSchema },
     business_name: { type: String, maxlength: 120 },
     broker_mandi: { type: String, maxlength: 80 },

@@ -8,7 +8,16 @@ export {
   type IGeoPoint,
   type Role,
   type KycStatus,
+  type IUserRating,
 } from './models/User.js';
+export { ReviewModel, type ReviewDoc, type IReview, type IReviewScores } from './models/Review.js';
+export {
+  SupportTicketModel,
+  type SupportTicketDoc,
+  type ISupportTicket,
+  type TicketCategory,
+  type TicketStatus,
+} from './models/SupportTicket.js';
 export {
   LotModel,
   GRAINS,

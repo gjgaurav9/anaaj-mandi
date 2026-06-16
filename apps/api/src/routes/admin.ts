@@ -1,7 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { Types } from 'mongoose';
-import { LotModel, UserModel, PriceTickModel } from '@anaaj/db';
-import { AdminKycDecisionInputSchema, CreatePriceTickInputSchema } from '@anaaj/types';
+import { LotModel, UserModel, PriceTickModel, SupportTicketModel } from '@anaaj/db';
+import {
+  AdminKycDecisionInputSchema,
+  CreatePriceTickInputSchema,
+  UpdateTicketInputSchema,
+} from '@anaaj/types';
 import { parseOrThrow } from '../lib/zod.js';
 import { fail, ok } from '../lib/reply.js';
 
@@ -38,6 +42,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       ...(user.kyc ?? { status: 'pending' }),
       status: body.status,
       verified_at: body.status === 'verified' ? new Date() : user.kyc?.verified_at,
+      ...(body.reason ? { reason: body.reason } : {}),
     };
     await user.save();
     return ok(reply, {
@@ -104,6 +109,50 @@ export default async function adminRoutes(app: FastifyInstance) {
         price_modal: tick.price_modal,
         price_max: tick.price_max,
         date: tick.date,
+      },
+    });
+  });
+
+  // --- support tickets ---
+  app.get('/admin/support', async (req, reply) => {
+    const status = (req.query as { status?: string } | undefined)?.status;
+    const filter = status ? { status } : {};
+    const items = await SupportTicketModel.find(filter).sort({ created_at: -1 }).limit(200);
+    return ok(reply, {
+      items: items.map((t) => ({
+        _id: String(t._id),
+        user_id: String(t.user_id),
+        role: t.role,
+        category: t.category,
+        message: t.message,
+        related_lot_id: t.related_lot_id ? String(t.related_lot_id) : null,
+        related_broker_id: t.related_broker_id ? String(t.related_broker_id) : null,
+        status: t.status,
+        admin_note: t.admin_note ?? null,
+        created_at: t.created_at,
+        updated_at: t.updated_at,
+      })),
+    });
+  });
+
+  app.patch<{ Params: { id: string } }>('/admin/support/:id', async (req, reply) => {
+    if (!Types.ObjectId.isValid(req.params.id)) {
+      return fail(reply, 400, 'invalid_id', 'invalid ticket id');
+    }
+    const body = parseOrThrow(UpdateTicketInputSchema, req.body);
+    const ticket = await SupportTicketModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: { status: body.status, ...(body.admin_note ? { admin_note: body.admin_note } : {}) },
+      },
+      { new: true },
+    );
+    if (!ticket) return fail(reply, 404, 'not_found', 'ticket not found');
+    return ok(reply, {
+      ticket: {
+        _id: String(ticket._id),
+        status: ticket.status,
+        admin_note: ticket.admin_note ?? null,
       },
     });
   });

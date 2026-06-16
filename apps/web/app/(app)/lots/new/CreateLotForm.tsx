@@ -14,6 +14,7 @@ import {
   type Grain,
 } from '@anaaj/types';
 import { clientFetch, ClientApiError } from '@/lib/clientApi';
+import { PhotoUploader } from '@/components/PhotoUploader';
 
 // Indore center, used when broker doesn't specify a geo point.
 const INDORE_GEO: [number, number] = [75.8577, 22.7196];
@@ -61,9 +62,6 @@ const FormSchema = z.object({
   pincode: z.string().regex(/^\d{6}$/, '6-digit PIN'),
 
   available_from: z.string().min(1),
-
-  /** Comma- or newline-separated HTTPS URLs (optional). */
-  photo_urls: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -72,6 +70,7 @@ export function CreateLotForm() {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const {
     register,
@@ -98,10 +97,6 @@ export function CreateLotForm() {
     setSubmitError(null);
     setSubmitting(true);
     try {
-      const photos = (values.photo_urls ?? '')
-        .split(/[\n,]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
       const finalPhotos =
         intendedStatus === 'active' && photos.length === 0
           ? [defaultPhotoFor(values.grain, values.variety)]
@@ -289,21 +284,19 @@ export function CreateLotForm() {
       </Section>
 
       <Section
-        title="Photos (optional)"
-        sub="HTTPS URLs, ek line me ek URL. Empty rakha to default placeholder use hoga."
+        title="Photos"
+        sub="Grain ki saaf photos add karo — buyers ko compare karna aasaan ho jata hai. (Max 5)"
       >
-        <textarea
-          {...register('photo_urls')}
-          rows={3}
-          className={`${input} resize-y`}
-          placeholder="https://res.cloudinary.com/..."
-        />
-        <p className="text-xs text-neutral-500">
-          Preview placeholder for{' '}
-          <span className="font-medium text-wheat-600">
-            {GRAIN_LABELS[grain]} · {variety || '(variety)'}
-          </span>
-        </p>
+        <PhotoUploader value={photos} onChange={setPhotos} />
+        {photos.length === 0 && (
+          <p className="text-xs text-neutral-500">
+            Photo nahi di to{' '}
+            <span className="font-medium text-wheat-600">
+              {GRAIN_LABELS[grain]} · {variety || '(variety)'}
+            </span>{' '}
+            ka placeholder lag jayega.
+          </p>
+        )}
       </Section>
 
       {submitError && (

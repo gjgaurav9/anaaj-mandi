@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
+import { cookies } from 'next/headers';
+import { I18nProvider, LOCALE_COOKIE, asLocale } from '@/lib/i18n';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -21,9 +23,12 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const locale = asLocale(cookies().get(LOCALE_COOKIE)?.value);
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang={locale}>
+      <body>
+        <I18nProvider initialLocale={locale}>{children}</I18nProvider>
+      </body>
     </html>
   );
 }

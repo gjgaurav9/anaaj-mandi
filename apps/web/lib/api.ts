@@ -77,13 +77,19 @@ export interface LotListItem {
   view_count: number;
   inquiry_count: number;
   created_at: string;
+  /** Lightweight broker summary on list responses (no phone). */
+  broker?: PublicBroker | null;
 }
 
 export interface PublicBroker {
   _id: string;
   name: string | null;
   broker_mandi: string | null;
+  broker_years: number | null;
+  verified: boolean;
+  rating: { avg: number; count: number };
   phone?: string; // only present for authed viewers
+  whatsapp?: string | null; // broker WhatsApp (falls back to phone), authed only
 }
 
 export interface LotDetail extends LotListItem {

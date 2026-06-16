@@ -43,6 +43,18 @@ export function LotCard({ lot }: { lot: LotListItem }) {
             <span>{lot.pickup_location.city}</span>
             <span>{lot.inquiry_count} inquiries</span>
           </div>
+          {lot.broker && (lot.broker.verified || lot.broker.rating.count > 0) && (
+            <div className="flex items-center gap-2 border-t border-neutral-100 pt-1.5 text-xs">
+              {lot.broker.verified && (
+                <span className="font-medium text-green-700">✓ Verified</span>
+              )}
+              {lot.broker.rating.count > 0 && (
+                <span className="text-amber-600">
+                  ★ {lot.broker.rating.avg.toFixed(1)} ({lot.broker.rating.count})
+                </span>
+              )}
+            </div>
+          )}
         </CardBody>
       </Card>
     </Link>

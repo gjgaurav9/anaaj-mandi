@@ -1,15 +1,28 @@
 import { z } from 'zod';
-import { GeoPointSchema, ObjectIdSchema, PhoneSchema, PincodeSchema, RoleSchema } from './common';
+import {
+  GeoPointSchema,
+  HttpsUrlSchema,
+  ObjectIdSchema,
+  PhoneSchema,
+  PincodeSchema,
+  RoleSchema,
+} from './common';
 
 export const KycStatusSchema = z.enum(['pending', 'verified', 'rejected']);
 export type KycStatus = z.infer<typeof KycStatusSchema>;
 
+const GstinSchema = z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]{3}$/, 'invalid GSTIN');
+
+/** Broker rating aggregate, denormalised onto the user. */
+export const UserRatingSchema = z.object({
+  avg: z.number().min(0).max(5),
+  count: z.number().int().nonnegative(),
+});
+export type UserRating = z.infer<typeof UserRatingSchema>;
+
 export const KycSchema = z.object({
   status: KycStatusSchema.default('pending'),
-  gst: z
-    .string()
-    .regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]{3}$/, 'invalid GSTIN')
-    .optional(),
+  gst: GstinSchema.optional(),
   pan_last4: z
     .string()
     .regex(/^[0-9A-Z]{4}$/)
@@ -18,9 +31,28 @@ export const KycSchema = z.object({
     .string()
     .regex(/^\d{4}$/)
     .optional(),
+  gst_doc_url: HttpsUrlSchema.optional(),
+  submitted_at: z.coerce.date().optional(),
   verified_at: z.coerce.date().optional(),
+  reason: z.string().max(280).optional(),
 });
 export type Kyc = z.infer<typeof KycSchema>;
+
+/** Broker KYC submission (POST /me/kyc). Sets status -> pending for admin review. */
+export const SubmitKycInputSchema = z
+  .object({
+    gst: GstinSchema.optional(),
+    pan_last4: z
+      .string()
+      .regex(/^[0-9A-Z]{4}$/, 'last 4 of PAN')
+      .optional(),
+    gst_doc_url: HttpsUrlSchema.optional(),
+    broker_years: z.number().int().min(0).max(80).optional(),
+  })
+  .refine((v) => v.gst || v.gst_doc_url, {
+    message: 'provide a GSTIN or upload a GST invoice',
+  });
+export type SubmitKycInput = z.infer<typeof SubmitKycInputSchema>;
 
 export const UserLocationSchema = z.object({
   city: z.string().min(2).max(80),
@@ -35,9 +67,11 @@ export type UserLocation = z.infer<typeof UserLocationSchema>;
 export const UserSchema = z.object({
   _id: ObjectIdSchema,
   phone: PhoneSchema,
+  whatsapp: PhoneSchema.optional(),
   name: z.string().min(1).max(80).optional(),
   role: RoleSchema,
   kyc: KycSchema.default({ status: 'pending' }),
+  rating: UserRatingSchema.default({ avg: 0, count: 0 }),
   location: UserLocationSchema.optional(),
   business_name: z.string().max(120).optional(),
   // broker-specific
@@ -70,12 +104,13 @@ export type UserShell = z.infer<typeof UserShellSchema>;
 export const UpdateMeInputSchema = z
   .object({
     name: z.string().min(1).max(80),
+    whatsapp: PhoneSchema,
     location: UserLocationSchema,
     business_name: z.string().max(120),
     broker_mandi: z.string().max(80),
     broker_years: z.number().int().min(0).max(80),
     buyer_company: z.string().max(120),
-    buyer_gst: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]{3}$/),
+    buyer_gst: GstinSchema,
   })
   .partial();
 export type UpdateMeInput = z.infer<typeof UpdateMeInputSchema>;

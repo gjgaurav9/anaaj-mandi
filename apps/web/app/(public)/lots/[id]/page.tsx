@@ -12,6 +12,7 @@ import {
   grainEmoji,
 } from '@/lib/format';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { BrokerTrust } from '@/components/BrokerTrust';
 import { getMe } from '@/lib/me';
 
 interface LotPageProps {
@@ -42,7 +43,8 @@ export default async function LotDetailPage({ params }: LotPageProps) {
     me && (me.role === 'admin' || (lot.broker?._id && lot.broker._id === me._id)),
   );
 
-  const brokerPhone = lot.broker?.phone ?? '';
+  // Prefer the broker's dedicated WhatsApp number, fall back to their phone.
+  const brokerPhone = lot.broker?.whatsapp ?? lot.broker?.phone ?? '';
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-4 md:py-8">
@@ -157,10 +159,11 @@ export default async function LotDetailPage({ params }: LotPageProps) {
               <h2 className="text-xs font-semibold tracking-wide text-neutral-500 uppercase">
                 Listed by
               </h2>
-              <div className="mt-1 font-medium">
-                {lot.broker?.name ?? 'Verified broker'}
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 font-medium">
+                <span>{lot.broker?.name ?? 'Broker'}</span>
+                {lot.broker?.verified && <Badge tone="success">✓ Verified</Badge>}
                 {lot.broker?.broker_mandi ? (
-                  <span className="text-neutral-500"> · {lot.broker.broker_mandi}</span>
+                  <span className="font-normal text-neutral-500"> · {lot.broker.broker_mandi}</span>
                 ) : null}
               </div>
               <div className="text-neutral-500">
@@ -204,6 +207,16 @@ export default async function LotDetailPage({ params }: LotPageProps) {
             <div className="rounded-md bg-neutral-100 px-3 py-2 text-center text-xs text-neutral-600">
               Brokers can&apos;t inquire on other brokers&apos; lots.
             </div>
+          )}
+
+          {lot.broker && (
+            <BrokerTrust
+              brokerId={lot.broker._id}
+              verified={lot.broker.verified}
+              brokerYears={lot.broker.broker_years}
+              lotId={lot._id}
+              canReview={me?.role === 'buyer'}
+            />
           )}
         </div>
       </div>
